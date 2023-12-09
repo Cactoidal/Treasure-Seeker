@@ -8,7 +8,7 @@ var req_header = "Content-Type: application/json"
 var chain_id = 8009
 var chain_public_key
 
-var test_contract = "0xcA57f7b1FDfD3cbD513954938498Fe6a9bc8FF63"
+var test_contract = "0xB91e7B7a337Edce162D7fcD7D5F875306d129D31"
 
 var signed_data = ""
 
@@ -167,6 +167,7 @@ func get_chain_public_key_attempted(result, response_code, headers, body):
 		var chain_public_key = get_result["result"]
 		var encrypt_value = 17
 		
+		http_request_delete_tx_write.queue_free()
 		Fhe.encrypt_message(content, chain_id, test_contract, zama_rpc, gas_price, tx_count, chain_public_key, encrypt_value, self)
 		
 		
@@ -191,7 +192,7 @@ func get_chain_public_key_attempted(result, response_code, headers, body):
 		print("no")
 		pass
 
-	http_request_delete_tx_write.queue_free()
+	
 	
 
 
@@ -201,27 +202,30 @@ func get_chain_public_key_attempted(result, response_code, headers, body):
 func set_signed_data(var signature):
 	
 	var signed_data = "".join(["0x", signature])
+	#print(signed_data)
 	
-	print(signed_data)
+	var http_request = HTTPRequest.new()
+	$HTTP.add_child(http_request)
+	http_request_delete_tx_write = http_request
+	http_request.connect("request_completed", self, "send_transaction_attempted")
 	
-	# TEMP OFF
+	var tx_json = '{"data": "' + signed_data + '"}'
 	
-#	var http_request = HTTPRequest.new()
-#	$HTTP.add_child(http_request)
-#	http_request_delete_tx_write = http_request
-#	http_request.connect("request_completed", self, "send_transaction_attempted")
-#
-#	var tx = {"jsonrpc": "2.0", "method": "eth_sendRawTransaction", "params": [signed_data], "id": 7}
-#	print(signed_data)
-#	var error = http_request.request(zama_rpc, 
-#	[req_header], 
-#	true, 
-#	HTTPClient.METHOD_POST, 
-#	JSON.print(tx))
+	#print(tx_json)
+	
+	#eth_sendRawTransaction
+	var tx = {"jsonrpc": "2.0", "method": "eth_sendRawTransaction", "params": [signed_data], "id": 7}
+
+	#var tx = {"jsonrpc": "2.0", "method": "eth_sendRawTransaction", "params": [{"from": user_address, "to": test_contract, "data": signed_data}], "id": 7}
+	var error = http_request.request(zama_rpc, 
+	[req_header], 
+	true, 
+	HTTPClient.METHOD_POST, 
+	JSON.print(tx))
+
 
 
 func send_transaction_attempted(result, response_code, headers, body):
-	
 	var get_result = parse_json(body.get_string_from_ascii())
 
 	print(get_result)
