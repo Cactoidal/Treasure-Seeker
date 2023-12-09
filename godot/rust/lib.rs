@@ -7,7 +7,7 @@ use tokio::runtime::{Builder, Runtime};
 use tokio::task::LocalSet;
 use tokio::macros::support::{Pin, Poll};
 use futures::Future;
-use tfhe::prelude::*;
+use tfhe::{prelude::*, CompactFheUint8List};
 use tfhe::{generate_keys, set_server_key, ConfigBuilder, FheUint32, FheUint8, CompactFheUint32List, CompactPublicKey};
 use hex::*;
 use bincode::deserialize;
@@ -138,19 +138,23 @@ async fn encrypt_message (key: PoolArray<u8>, chain_id: u64, fhe_contract_addres
 
     let chain_public_key: CompactPublicKey = bincode::deserialize(d_bytes).unwrap();
 
-    let fhe_value = FheUint8::try_encrypt(message, &chain_public_key).unwrap();
+    let ser_message = bincode::serialize(&message).unwrap();
+
+    let message_bytes = &ser_message[..];
+
+    let fhe_value = CompactFheUint8List::try_encrypt(message_bytes, &chain_public_key).unwrap();
 
     let ser_val = bincode::serialize(&fhe_value).unwrap();
 
     let fhe_ethers_bytes: Bytes = ser_val.into();
 
-    let calldata = contract.commit_action(fhe_ethers_bytes).calldata().unwrap();
+    let calldata = contract.set_number(fhe_ethers_bytes).calldata().unwrap();
 
     let tx = Eip1559TransactionRequest::new()
         .from(user_address)
         .to(contract_address) 
         .value(0)
-        .gas(900000)
+        .gas(1000000)
         .max_fee_per_gas(_gas_fee)
         .max_priority_fee_per_gas(_gas_fee)
         .chain_id(chain_id)
@@ -194,7 +198,7 @@ let client = SignerMiddleware::new(provider, wallet);
 
 let contract = FHEABI::new(contract_address.clone(), Arc::new(client.clone()));
 
-let calldata = contract.in_queue(user_address).calldata().unwrap();
+let calldata = contract.success().calldata().unwrap();
 
 let return_string: GodotString = calldata.to_string().into();
 
