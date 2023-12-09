@@ -208,15 +208,9 @@ func set_signed_data(var signature):
 	$HTTP.add_child(http_request)
 	http_request_delete_tx_write = http_request
 	http_request.connect("request_completed", self, "send_transaction_attempted")
-	
-	var tx_json = '{"data": "' + signed_data + '"}'
-	
-	#print(tx_json)
-	
-	#eth_sendRawTransaction
+
 	var tx = {"jsonrpc": "2.0", "method": "eth_sendRawTransaction", "params": [signed_data], "id": 7}
 
-	#var tx = {"jsonrpc": "2.0", "method": "eth_sendRawTransaction", "params": [{"from": user_address, "to": test_contract, "data": signed_data}], "id": 7}
 	var error = http_request.request(zama_rpc, 
 	[req_header], 
 	true, 
