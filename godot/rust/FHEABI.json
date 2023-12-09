@@ -1,0 +1,47 @@
+[
+	{
+		"inputs": [
+			{
+				"internalType": "bytes",
+				"name": "_number",
+				"type": "bytes"
+			}
+		],
+		"name": "set_number",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "secretNumber",
+		"outputs": [
+			{
+				"internalType": "euint8",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "success",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+]
