@@ -49,7 +49,7 @@ contract FHEGame is EIP712WithModifier {
         baseResources[testOpponent] = TFHE.cmux(highOpponentResources, TFHE.sub(baseResources[msg.sender], 99), baseResources[msg.sender]);
         ///////////
 
-        // Initialize "base resource" value.  It cannot be too low or too high
+        // Initialize "base resource" value.  It cannot be too low or too high, to prevent underflow/overflow
         // This value will be used as a comparator later, and is meant to obscure the player's in-game status
         baseResources[msg.sender] = TFHE.randEuint8();
         ebool lowResources = TFHE.lt(baseResources[msg.sender], 100);
@@ -102,8 +102,8 @@ contract FHEGame is EIP712WithModifier {
     }
 
     // Choose 3 spots on the board to trap
-    // You can trap outside the boundaries of the board (0-24), but this simply means
-    // you would have one less trap during the game
+    // A modder could try to trap outside the boundaries of the board (0-24), or stack traps on the same space,
+    // but these OoB traps would have no effect on the game, aside from reducing the number of traps in play
     function setTraps(bytes calldata _trap1, bytes calldata _trap2, bytes calldata _trap3) public {
         require(inGame[msg.sender] == true);
         require(hasSetTraps[msg.sender] == false);
@@ -287,3 +287,10 @@ contract FHEGame is EIP712WithModifier {
 
 
   }
+
+
+
+
+
+
+
