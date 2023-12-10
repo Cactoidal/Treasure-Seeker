@@ -42,7 +42,7 @@ While everyone will know what the initial values are, what matters for this game
 
 To set this initial value, my solution is slightly hacky.  The player provides the euint, then the contract checks if that euint is equal to the expected value, setting an ebool to the result.  Cmux checks the ebool, and if it is false, it will revert the transaction with a deliberate error by attempting to set a variable to an uninitialized euint.
 
-I have another problem at the end of the game, however.  From a game design perspective, I think it would be better if the game is instantly lost as soon as you hit a trap.
+I have another problem at the end of the game, however.  From a game design perspective, I think it will be better if the game is instantly lost as soon as you hit a trap.  There would be no way to win if a trap is hit; if the other opponent hits a trap, or 2 or 3, the game will still end in a draw, which is the same as a loss in terms of rewards.
 
 I had originally planned to do this by making the trap penalty so large that continuing the game is pointless after receiving it.  When the game ends, the contract checks the "current score" against the "base score", and if the current score is smaller, the contract knows you hit a trap, and would set your "actual score" to 0 by subtracting the base score by itself.
 
