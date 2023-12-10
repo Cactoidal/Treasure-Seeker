@@ -108,7 +108,7 @@ return_string
 
 #[method]
 #[tokio::main]
-async fn join_match(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: GodotString, rpc: GodotString, _gas_fee: u64, _count: u64, key_material: GodotString, ui_node: Ref<Control>) -> NewFuture {
+async fn join_match(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: GodotString, rpc: GodotString, _gas_fee: u64, _count: u64, ui_node: Ref<Control>) -> NewFuture {
     
     let vec = &key.to_vec();
 
@@ -134,7 +134,123 @@ async fn join_match(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: God
         .from(user_address)
         .to(contract_address) 
         .value(0)
-        .gas(10000000)
+        .gas(9000000)
+        .max_fee_per_gas(_gas_fee)
+        .max_priority_fee_per_gas(_gas_fee)
+        .chain_id(chain_id)
+        .nonce(_count)
+        .data(calldata);
+
+    let typed_tx: TypedTransaction = TypedTransaction::Eip1559(tx.clone());
+
+    let signature = wallet.sign_transaction(&typed_tx).await.unwrap();
+    let signed_data = TypedTransaction::rlp_signed(&typed_tx, &signature);
+
+    let node: TRef<Control> = unsafe { ui_node.assume_safe() };
+
+    unsafe {
+        node.call("set_signed_data", &[hex::encode(signed_data).to_variant()])
+    };
+
+    NewFuture(Ok(()))
+}
+
+#[method]
+#[tokio::main]
+async fn initialize_player(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: GodotString, rpc: GodotString, _gas_fee: u64, _count: u64, ui_node: Ref<Control>) -> NewFuture {
+    
+    let vec = &key.to_vec();
+
+    let keyset = &vec[..]; 
+         
+    let prewallet : LocalWallet = LocalWallet::from_bytes(&keyset).unwrap();
+    
+    let wallet: LocalWallet = prewallet.with_chain_id(chain_id);
+    
+    let user_address = wallet.address();
+    
+    let provider = Provider::<Http>::try_from(rpc.to_string()).expect("could not instantiate HTTP Provider");
+    
+    let contract_address: Address = fhe_contract_address.to_string().parse().unwrap();
+    
+    let client = SignerMiddleware::new(provider, wallet.clone());
+    
+    let contract = FHEABI::new(contract_address.clone(), Arc::new(client.clone()));
+
+    let calldata = contract.initialize_point_balance().calldata().unwrap();
+
+    let tx = Eip1559TransactionRequest::new()
+        .from(user_address)
+        .to(contract_address) 
+        .value(0)
+        .gas(9000000)
+        .max_fee_per_gas(_gas_fee)
+        .max_priority_fee_per_gas(_gas_fee)
+        .chain_id(chain_id)
+        .nonce(_count)
+        .data(calldata);
+
+    let typed_tx: TypedTransaction = TypedTransaction::Eip1559(tx.clone());
+
+    let signature = wallet.sign_transaction(&typed_tx).await.unwrap();
+    let signed_data = TypedTransaction::rlp_signed(&typed_tx, &signature);
+
+    let node: TRef<Control> = unsafe { ui_node.assume_safe() };
+
+    unsafe {
+        node.call("set_signed_data", &[hex::encode(signed_data).to_variant()])
+    };
+
+    NewFuture(Ok(()))
+}
+
+
+#[method]
+#[tokio::main]
+async fn set_number(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: GodotString, rpc: GodotString, _gas_fee: u64, _count: u64, key_material: GodotString, _trap1: u8, ui_node: Ref<Control>) -> NewFuture {
+    
+    let vec = &key.to_vec();
+
+    let keyset = &vec[..]; 
+         
+    let prewallet : LocalWallet = LocalWallet::from_bytes(&keyset).unwrap();
+    
+    let wallet: LocalWallet = prewallet.with_chain_id(chain_id);
+    
+    let user_address = wallet.address();
+    
+    let provider = Provider::<Http>::try_from(rpc.to_string()).expect("could not instantiate HTTP Provider");
+    
+    let contract_address: Address = fhe_contract_address.to_string().parse().unwrap();
+    
+    let client = SignerMiddleware::new(provider, wallet.clone());
+    
+    let contract = FHEABI::new(contract_address.clone(), Arc::new(client.clone()));
+
+    let raw_hex: String = key_material.to_string();
+    
+    let decoded: Bytes = ethers::abi::AbiDecode::decode_hex(raw_hex).unwrap();
+
+    let d_vec: Vec<u8> = decoded.iter().map(|x| x.clone()).collect();
+    
+    let d_bytes = &d_vec[..]; 
+
+    let chain_public_key: CompactPublicKey = bincode::deserialize(d_bytes).unwrap();
+
+    let ser_trap1 = bincode::serialize(&_trap1).unwrap();
+    let trap1_bytes = &ser_trap1[..];
+    let fhe_trap1 = CompactFheUint8List::try_encrypt(trap1_bytes, &chain_public_key).unwrap();
+    let ser_fhe_trap1 = bincode::serialize(&fhe_trap1).unwrap();
+    let fhe_trap1_bytes: Bytes = ser_fhe_trap1.into();
+
+    //let calldata = contract.set_number(fhe_ethers_bytes).calldata().unwrap();
+    let calldata = contract.set_number(fhe_trap1_bytes).calldata().unwrap();
+
+    let tx = Eip1559TransactionRequest::new()
+        .from(user_address)
+        .to(contract_address) 
+        .value(0)
+        .gas(9000000)
         .max_fee_per_gas(_gas_fee)
         .max_priority_fee_per_gas(_gas_fee)
         .chain_id(chain_id)
@@ -214,7 +330,7 @@ async fn set_traps(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: Godo
         .from(user_address)
         .to(contract_address) 
         .value(0)
-        .gas(10000000)
+        .gas(9000000)
         .max_fee_per_gas(_gas_fee)
         .max_priority_fee_per_gas(_gas_fee)
         .chain_id(chain_id)
@@ -237,7 +353,7 @@ async fn set_traps(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: Godo
 
 #[method]
 #[tokio::main]
-async fn try_mine(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: GodotString, rpc: GodotString, _gas_fee: u64, _count: u64, key_material: GodotString, location: u8, ui_node: Ref<Control>) -> NewFuture {
+async fn try_mine(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: GodotString, rpc: GodotString, _gas_fee: u64, _count: u64, location: u8, ui_node: Ref<Control>) -> NewFuture {
     
     let vec = &key.to_vec();
 
@@ -263,7 +379,7 @@ async fn try_mine(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: Godot
         .from(user_address)
         .to(contract_address) 
         .value(0)
-        .gas(10000000)
+        .gas(9000000)
         .max_fee_per_gas(_gas_fee)
         .max_priority_fee_per_gas(_gas_fee)
         .chain_id(chain_id)
@@ -286,7 +402,7 @@ async fn try_mine(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: Godot
 
 #[method]
 #[tokio::main]
-async fn stop_mining(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: GodotString, rpc: GodotString, _gas_fee: u64, _count: u64, key_material: GodotString, ui_node: Ref<Control>) -> NewFuture {
+async fn stop_mining(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: GodotString, rpc: GodotString, _gas_fee: u64, _count: u64, ui_node: Ref<Control>) -> NewFuture {
     
     let vec = &key.to_vec();
 
@@ -312,7 +428,7 @@ async fn stop_mining(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: Go
         .from(user_address)
         .to(contract_address) 
         .value(0)
-        .gas(10000000)
+        .gas(9000000)
         .max_fee_per_gas(_gas_fee)
         .max_priority_fee_per_gas(_gas_fee)
         .chain_id(chain_id)
