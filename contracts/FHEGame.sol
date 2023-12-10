@@ -26,6 +26,8 @@ contract FHEGame is EIP712WithModifier {
     mapping (address => euint8) currentResources;
     mapping (address => euint8[3]) traps;
     mapping (address => bool) hasSetTraps;
+    mapping (address => bool) activeMiner;
+    mapping (address => bool) readyToEnd;
    
 
     // For Testing
@@ -45,24 +47,35 @@ contract FHEGame is EIP712WithModifier {
         baseResources[testOpponent] = TFHE.randEuint8();
         ebool lowOpponentResources = TFHE.lt(baseResources[testOpponent], 100);
         baseResources[testOpponent] = TFHE.cmux(lowOpponentResources, TFHE.add(baseResources[msg.sender], 99), baseResources[msg.sender]);
+        ebool highOpponentResources = TFHE.gt(baseResources[testOpponent], 200);
+        baseResources[testOpponent] = TFHE.cmux(highOpponentResources, TFHE.sub(baseResources[msg.sender], 99), baseResources[msg.sender]);
         ///////////
 
+        // Initialize "base resource" value.  It cannot be too low or too high
+        // This value will be used as a comparator later, and is meant to obscure the player's in-game status
         baseResources[msg.sender] = TFHE.randEuint8();
         ebool lowResources = TFHE.lt(baseResources[msg.sender], 100);
         baseResources[msg.sender] = TFHE.cmux(lowResources, TFHE.add(baseResources[msg.sender], 99), baseResources[msg.sender]);
+        ebool highResources = TFHE.gt(baseResources[msg.sender], 200);
+        baseResources[msg.sender] = TFHE.cmux(highResources, TFHE.sub(baseResources[msg.sender], 99), baseResources[msg.sender]);
 
+        // If matchmaking queue is empty, become player 1
         address currentPlayer1 = matchmaker[0];
         if (currentPlayer1 == address(0x0)) {
             matchmaker[0] = msg.sender;
             waitingForMatch[msg.sender] = true;
             queueStartTime[msg.sender] = block.number + 50;
         }
+        // If someone has been sitting in the queue for 50 blocks, they are kicked out and replaced
         else if (queueStartTime[currentPlayer1] < block.number) {
             waitingForMatch[currentPlayer1] = false;
             matchmaker[0] = msg.sender;
             waitingForMatch[msg.sender] = true;
             queueStartTime[msg.sender] = block.number + 50;
         }
+        // Otherwise, become player 2.  Both players now enter the game, and their "current resource"
+        // value is set.  This value will be used as a comparator later, to determine
+        // how many points the player obtained during the game.
         else {
             waitingForMatch[currentPlayer1] = false;
             matchmaker[1] = msg.sender;
@@ -75,10 +88,14 @@ contract FHEGame is EIP712WithModifier {
 
             currentResources[currentPlayer1] = baseResources[currentPlayer1];
             currentResources[msg.sender] = baseResources[msg.sender];
+
+            matchmaker[0] = address(0x0);
+            matchmaker[1] = address(0x0);
         }
 
     }
 
+    // Choose 3 spots on the board to trap
     function setTraps(bytes calldata _trap1, bytes calldata _trap2, bytes calldata _trap3) public {
         require(inGame[msg.sender] == true);
         require(hasSetTraps[msg.sender] == false);
@@ -87,13 +104,15 @@ contract FHEGame is EIP712WithModifier {
         euint8 trap3 = TFHE.asEuint8(_trap3);
         traps[msg.sender] = [trap1,trap2,trap3];
         hasSetTraps[msg.sender] = true;
+        activeMiner[msg.sender] = true;
     }
 
 
+    // Choose a spot to mine.  If the mine has a trap, you will lose 33 points.  Otherwise, you gain 1 point.
     function tryMine(uint8 location) public {
         address opponent = currentOpponent[msg.sender];
         euint8 resources = currentResources[msg.sender];
-        require(hasSetTraps[msg.sender] == true);
+        require(activeMiner[msg.sender] == true);
         require(hasSetTraps[opponent] == true);
         euint8 detectTrappedBase = TFHE.randEuint8();
         ebool lowRand = TFHE.eq(detectTrappedBase, 0);
@@ -105,6 +124,35 @@ contract FHEGame is EIP712WithModifier {
         }
         ebool wasTrapped = TFHE.lt(detectTrapped, detectTrappedBase);
         currentResources[msg.sender] = TFHE.cmux(wasTrapped, TFHE.sub(resources, 33), TFHE.add(resources, 1));
+    }
+
+    // If you are happy with your score, you may signal that you are ready to end the game.
+    function stopMining() public {
+        require(inGame[msg.sender] == true);
+        require(activeMiner[msg.sender] == true);
+        activeMiner[msg.sender] = false;
+        readyToEnd[msg.sender] = true;
+    }
+
+    // Player scores are obtained by comparing and subtracting the "base resource" from the "current resource".
+    // The player scores are then compared to determine the winner.
+    // Both players are reinitialized.
+    function endGame() public {
+        address opponent = currentOpponent[msg.sender];
+        require(readyToEnd[msg.sender] == true);
+        require(readyToEnd[opponent] == true);
+        inGame[msg.sender] = false;
+        inGame[opponent] = false;
+        readyToEnd[msg.sender] = false;
+        readyToEnd[opponent] = false;
+        hasSetTraps[msg.sender] = false;
+        hasSetTraps[opponent] = false;
+
+    }
+
+    // If a player has not acted for 50 blocks, you may end the game.
+    function forceEndGame() public {
+
     }
 
 
