@@ -6,7 +6,7 @@ Homomorphic encryption allows the blockchain to store secret information, and on
 
 By the latter point, I mean that conditional checking (such as "is this homomorphic number greater than another number") must be written to prevent an attacker from figuring out the homomorphic number by repeatedly guessing.
 
-This is possible by using the "cmux" function.  Comparison operators (less than, greater than, equal to, etc.) can be used to compare homomorphic values, producing a homomorphic boolean.
+The "cmux" function can help avoid this problem.  Comparison operators (less than, greater than, equal to, etc.) can be used to compare homomorphic values, producing a homomorphic boolean.
 
 The homomorphic boolean can then be used with cmux, which essentially takes that boolean and returns a homomorphic integer (case true) or a different homomorphic integer (case false).
 
