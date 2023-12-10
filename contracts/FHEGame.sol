@@ -8,12 +8,6 @@ contract FHEGame is EIP712WithModifier {
 
     mapping (address => euint8) public secretNumber;
     bool public success;
-    uint epochStart;
-    //uint constant epochDivisor = 5000;
-    uint constant epochDivisor = 50;
-    mapping (uint => mapping (uint8 => euint16)) public epochResource;
-    mapping (uint => mapping (uint8 => bool)) public epochMineStarted;
-    mapping (uint => mapping (uint8 => ebool)) public epochMinedOut;
     mapping (address => euint32) playerPoints;
 
 
@@ -29,14 +23,16 @@ contract FHEGame is EIP712WithModifier {
     mapping (address => bool) activeMiner;
     mapping (address => bool) readyToEnd;
     mapping (address => uint) lastAction;
+
+    uint gameId = 1;
+    mapping (address => uint) gameSession;
+    mapping (uint => mapping (address => mapping (uint8 => bool))) minedLocations;
    
 
     // For Testing
-    address testOpponent;
+    address testOpponent = 0x2Bd1324482B9036708a7659A3FCe20DfaDD455ba;
 
     constructor() EIP712WithModifier("Authorization token", "1") {
-        epochStart = block.number;
-        testOpponent = address(this);
     }
 
     function joinMatch() public {
@@ -94,6 +90,11 @@ contract FHEGame is EIP712WithModifier {
             lastAction[currentPlayer1] = block.number;
             lastAction[msg.sender] = block.number;
 
+            gameSession[currentPlayer1] = gameId;
+            gameSession[msg.sender] = gameId;
+
+            gameId++;
+
             matchmaker[0] = address(0x0);
             matchmaker[1] = address(0x0);
         }
@@ -101,6 +102,8 @@ contract FHEGame is EIP712WithModifier {
     }
 
     // Choose 3 spots on the board to trap
+    // You can trap outside the boundaries of the board (0-24), but this simply means
+    // you would have one less trap during the game
     function setTraps(bytes calldata _trap1, bytes calldata _trap2, bytes calldata _trap3) public {
         require(inGame[msg.sender] == true);
         require(hasSetTraps[msg.sender] == false);
@@ -111,15 +114,30 @@ contract FHEGame is EIP712WithModifier {
         hasSetTraps[msg.sender] = true;
         activeMiner[msg.sender] = true;
         lastAction[msg.sender] = block.number;
+
+        /// For Testing
+        address opponent = currentOpponent[msg.sender];
+        traps[opponent] = [trap1,trap2,trap3];
+        hasSetTraps[opponent] = true;
+        activeMiner[opponent] = true;
+        lastAction[opponent] = block.number;
     }
 
 
     // Choose a spot to mine.  If the mine has a trap, you will lose 33 points.  Otherwise, you gain 1 point.
+    // Must mine within the boundaries of the board (0-24)
+    // Can't mine in the same spot twice
     function tryMine(uint8 location) public {
+        require (location >= 0 && location < 25);
+        require (minedLocations[gameSession[msg.sender]][msg.sender][location] == false);
+        minedLocations[gameSession[msg.sender]][msg.sender][location] = true;
+
         address opponent = currentOpponent[msg.sender];
         euint8 resources = currentResources[msg.sender];
+
         require(activeMiner[msg.sender] == true);
         require(hasSetTraps[opponent] == true);
+
         euint8 detectTrappedBase = TFHE.randEuint8();
         ebool lowRand = TFHE.eq(detectTrappedBase, 0);
         detectTrappedBase = TFHE.cmux(lowRand, TFHE.add(detectTrappedBase, 3), detectTrappedBase);
@@ -128,16 +146,22 @@ contract FHEGame is EIP712WithModifier {
             ebool trapped = TFHE.eq(traps[opponent][i], location);
             detectTrapped = TFHE.cmux(trapped, TFHE.sub(detectTrapped, 1), detectTrapped);
         }
+
         ebool wasTrapped = TFHE.lt(detectTrapped, detectTrappedBase);
         currentResources[msg.sender] = TFHE.cmux(wasTrapped, TFHE.sub(resources, 33), TFHE.add(resources, 1));
         lastAction[msg.sender] = block.number;
     }
 
-    // If you are happy with your score, you may signal that you are ready to end the game.
+    // If you are happy with your score (or ready to resign), you may signal that you are ready to end the game.
     function stopMining() public {
         require(inGame[msg.sender] == true);
         require(activeMiner[msg.sender] == true);
         activeMiner[msg.sender] = false;
+        readyToEnd[msg.sender] = true;
+
+        // For Testing
+        address opponent = currentOpponent[msg.sender];
+        activeMiner[opponent] = false;
         readyToEnd[msg.sender] = true;
     }
 
@@ -148,12 +172,6 @@ contract FHEGame is EIP712WithModifier {
         address opponent = currentOpponent[msg.sender];
         require(readyToEnd[msg.sender] == true);
         require(readyToEnd[opponent] == true);
-        inGame[msg.sender] = false;
-        inGame[opponent] = false;
-        readyToEnd[msg.sender] = false;
-        readyToEnd[opponent] = false;
-        hasSetTraps[msg.sender] = false;
-        hasSetTraps[opponent] = false;
 
         euint8 playerBaseScore = baseResources[msg.sender];
         euint8 playerCurrentScore = currentResources[msg.sender];
@@ -171,6 +189,13 @@ contract FHEGame is EIP712WithModifier {
         ebool opponentWon = TFHE.gt(opponentScore, playerScore);
         playerPoints[opponent] = TFHE.cmux(opponentWon, TFHE.add(playerPoints[opponent], opponentScore), playerPoints[opponent]);
 
+        inGame[msg.sender] = false;
+        inGame[opponent] = false;
+        readyToEnd[msg.sender] = false;
+        readyToEnd[opponent] = false;
+        hasSetTraps[msg.sender] = false;
+        hasSetTraps[opponent] = false;
+
     }
 
     // If a player has not acted for 20 blocks, you may end the game.
@@ -182,6 +207,10 @@ contract FHEGame is EIP712WithModifier {
         require (lastAction[msg.sender] > lastAction[opponent]);
         require (block.number >= lastAction[msg.sender] + 20);
 
+        ebool playerScoreAboveZero = TFHE.gt(currentResources[msg.sender], baseResources[msg.sender]);
+        euint8 playerScore = TFHE.cmux(playerScoreAboveZero, TFHE.sub(currentResources[msg.sender], baseResources[msg.sender]), TFHE.sub(baseResources[msg.sender], baseResources[msg.sender]));
+        playerPoints[msg.sender] = TFHE.add(playerPoints[msg.sender], playerScore);
+
         inGame[msg.sender] = false;
         inGame[opponent] = false;
         readyToEnd[msg.sender] = false;
@@ -191,13 +220,31 @@ contract FHEGame is EIP712WithModifier {
         activeMiner[msg.sender] = false;
         activeMiner[opponent] = false;
 
-        ebool playerScoreAboveZero = TFHE.gt(currentResources[msg.sender], baseResources[msg.sender]);
-        euint8 playerScore = TFHE.cmux(playerScoreAboveZero, TFHE.sub(currentResources[msg.sender], baseResources[msg.sender]), TFHE.sub(baseResources[msg.sender], baseResources[msg.sender]));
-        playerPoints[msg.sender] = TFHE.add(playerPoints[msg.sender], playerScore);
-
 
     }
 
+
+    // For now, using decrypt in testing
+    // the real thing must use msg.sender and EIP-712
+
+    function currentGameScore(address player) public view returns (uint8) {
+        euint8 playerBaseScore = baseResources[player];
+        euint8 playerCurrentScore = currentResources[player];
+
+        ebool playerScoreAboveZero = TFHE.gt(playerCurrentScore, playerBaseScore);
+        euint8 playerScore = TFHE.cmux(playerScoreAboveZero, TFHE.sub(playerCurrentScore, playerBaseScore), TFHE.sub(playerBaseScore, playerBaseScore));
+        return TFHE.decrypt(playerScore);
+    }
+    
+    function getPointsBalance(address player) public view returns (uint32) {
+        return TFHE.decrypt(playerPoints[player]);
+    }
+
+
+
+
+    /*
+        Turned off for testing
 
     // Retrieve your current score using EIP712 key exchange
     function currentScore(
@@ -211,23 +258,32 @@ contract FHEGame is EIP712WithModifier {
             euint8 playerScore = TFHE.cmux(playerScoreAboveZero, TFHE.sub(playerCurrentScore, playerBaseScore), TFHE.sub(playerBaseScore, playerBaseScore));
             return TFHE.reencrypt(playerScore, publicKey, 0);
         }
+*/
 
 
-
-    // Debug function
+    // Debug functions
     function setNumber(bytes calldata _number) public {
         euint8 number = TFHE.asEuint8(_number);
         secretNumber[msg.sender] = number;
         success = true;
     }
+
+
+    euint8 public underflowChecker;
+    
+    function tryUnderflow() public {
+        underflowChecker = TFHE.randEuint8();
+    }
+
+    function checkBefore() public view returns (uint8) {
+        return TFHE.decrypt(underflowChecker);
+    }
+
+    function checkUnderflow() public view returns (uint8) {
+        euint8 test = TFHE.sub(underflowChecker, 255);
+        return TFHE.decrypt(test);
+    }
     
 
 
   }
-
-
-
-
-
-
-
