@@ -14,7 +14,7 @@ contract FHEGame is EIP712WithModifier {
     mapping (uint => mapping (uint8 => euint16)) public epochResource;
     mapping (uint => mapping (uint8 => bool)) public epochMineStarted;
     mapping (uint => mapping (uint8 => ebool)) public epochMinedOut;
-    mapping (address => euint32) playerBalance;
+    mapping (address => euint32) playerPoints;
 
 
     address[2] matchmaker;
@@ -28,13 +28,15 @@ contract FHEGame is EIP712WithModifier {
     mapping (address => bool) hasSetTraps;
     mapping (address => bool) activeMiner;
     mapping (address => bool) readyToEnd;
+    mapping (address => uint) lastAction;
    
 
     // For Testing
-    address testOpponent = address(this);
+    address testOpponent;
 
     constructor() EIP712WithModifier("Authorization token", "1") {
         epochStart = block.number;
+        testOpponent = address(this);
     }
 
     function joinMatch() public {
@@ -89,6 +91,9 @@ contract FHEGame is EIP712WithModifier {
             currentResources[currentPlayer1] = baseResources[currentPlayer1];
             currentResources[msg.sender] = baseResources[msg.sender];
 
+            lastAction[currentPlayer1] = block.number;
+            lastAction[msg.sender] = block.number;
+
             matchmaker[0] = address(0x0);
             matchmaker[1] = address(0x0);
         }
@@ -105,6 +110,7 @@ contract FHEGame is EIP712WithModifier {
         traps[msg.sender] = [trap1,trap2,trap3];
         hasSetTraps[msg.sender] = true;
         activeMiner[msg.sender] = true;
+        lastAction[msg.sender] = block.number;
     }
 
 
@@ -124,6 +130,7 @@ contract FHEGame is EIP712WithModifier {
         }
         ebool wasTrapped = TFHE.lt(detectTrapped, detectTrappedBase);
         currentResources[msg.sender] = TFHE.cmux(wasTrapped, TFHE.sub(resources, 33), TFHE.add(resources, 1));
+        lastAction[msg.sender] = block.number;
     }
 
     // If you are happy with your score, you may signal that you are ready to end the game.
@@ -148,10 +155,46 @@ contract FHEGame is EIP712WithModifier {
         hasSetTraps[msg.sender] = false;
         hasSetTraps[opponent] = false;
 
+        euint8 playerBaseScore = baseResources[msg.sender];
+        euint8 playerCurrentScore = currentResources[msg.sender];
+        euint8 opponentBaseScore = baseResources[opponent];
+        euint8 opponentCurrentScore = currentResources[opponent];
+
+        ebool playerScoreAboveZero = TFHE.gt(playerCurrentScore, playerBaseScore);
+        euint8 playerScore = TFHE.cmux(playerScoreAboveZero, TFHE.sub(playerCurrentScore, playerBaseScore), TFHE.sub(playerBaseScore, playerBaseScore));
+
+        ebool opponentScoreAboveZero = TFHE.gt(opponentCurrentScore, opponentBaseScore);
+        euint8 opponentScore = TFHE.cmux(opponentScoreAboveZero, TFHE.sub(opponentCurrentScore, opponentBaseScore), TFHE.sub(opponentBaseScore, opponentBaseScore));
+
+        ebool playerWon = TFHE.gt(playerScore, opponentScore);
+        playerPoints[msg.sender] = TFHE.cmux(playerWon, TFHE.add(playerPoints[msg.sender], playerScore), playerPoints[msg.sender]);
+        ebool opponentWon = TFHE.gt(opponentScore, playerScore);
+        playerPoints[opponent] = TFHE.cmux(opponentWon, TFHE.add(playerPoints[opponent], opponentScore), playerPoints[opponent]);
+
     }
 
-    // If a player has not acted for 50 blocks, you may end the game.
+    // If a player has not acted for 20 blocks, you may end the game.
+    // You gain points if you have more than 0.
     function forceEndGame() public {
+        address opponent = currentOpponent[msg.sender];
+        require (inGame[msg.sender] == true);
+        require (readyToEnd[opponent] == false);
+        require (lastAction[msg.sender] > lastAction[opponent]);
+        require (block.number >= lastAction[msg.sender] + 20);
+
+        inGame[msg.sender] = false;
+        inGame[opponent] = false;
+        readyToEnd[msg.sender] = false;
+        readyToEnd[opponent] = false;
+        hasSetTraps[msg.sender] = false;
+        hasSetTraps[opponent] = false;
+        activeMiner[msg.sender] = false;
+        activeMiner[opponent] = false;
+
+        ebool playerScoreAboveZero = TFHE.gt(currentResources[msg.sender], baseResources[msg.sender]);
+        euint8 playerScore = TFHE.cmux(playerScoreAboveZero, TFHE.sub(currentResources[msg.sender], baseResources[msg.sender]), TFHE.sub(baseResources[msg.sender], baseResources[msg.sender]));
+        playerPoints[msg.sender] = TFHE.add(playerPoints[msg.sender], playerScore);
+
 
     }
 
@@ -210,7 +253,7 @@ contract FHEGame is EIP712WithModifier {
         // If there are no resources left, the location is mined out
         epochMinedOut[epoch][location] = TFHE.eq(availableResources, 0);
         // Give player the mine amount
-        playerBalance[msg.sender] = TFHE.add(playerBalance[msg.sender], mineAmount);
+        playerPoints[msg.sender] = TFHE.add(playerPoints[msg.sender], mineAmount);
         // Adjust the location resources
         epochResource[epoch][location] = availableResources;
 
