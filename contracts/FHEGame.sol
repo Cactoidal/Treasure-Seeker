@@ -4,13 +4,15 @@ pragma solidity 0.8.19;
 import "fhevm/lib/TFHE.sol";
 import "fhevm/abstracts/EIP712WithModifier.sol";
 
-contract FHEGame is EIP712WithModifier {
+contract FHEGame2 is EIP712WithModifier {
 
     mapping (address => euint8) public secretNumber;
     bool public success;
     mapping (address => bool) playerInitialized;
-    mapping (address => euint32) playerPoints;
+    mapping (address => euint32) public playerPoints;
 
+    euint32 errorThrow32;
+    euint8 errorThrow8;
 
     address[2] matchmaker;
     mapping (address => uint) public queueStartTime;
@@ -36,40 +38,35 @@ contract FHEGame is EIP712WithModifier {
     constructor() EIP712WithModifier("Authorization token", "1") {
     }
 
-    function initializePointBalance() public {
+    // Initialized point balance will always start at 0
+    function initializePointBalance(bytes calldata _zero) public {
         require(playerInitialized[msg.sender] == false);
         playerInitialized[msg.sender] = true;
-        playerPoints[msg.sender] = TFHE.randEuint32();
-        playerPoints[msg.sender] = TFHE.sub(playerPoints[msg.sender],  playerPoints[msg.sender]);
+        euint32 zero = TFHE.asEuint32(_zero);
+        ebool isZero = TFHE.eq(zero, 0);
+        //Throw deliberate error if not 0
+        playerPoints[msg.sender] = TFHE.cmux(isZero, zero, errorThrow32);
 
         // For Testing   //
-        playerPoints[testOpponent] = TFHE.randEuint32();
-        playerPoints[testOpponent] = TFHE.sub(playerPoints[testOpponent],  playerPoints[testOpponent]);
+        playerPoints[testOpponent] = zero;
     }
 
-    function joinMatch() public {
+    // Initialized base score will always start at 200, to prevent underflow/overflow
+    function joinMatch(bytes calldata _baseScore) public {
         require(playerInitialized[msg.sender] == true);
         require(inGame[msg.sender] == false);
         require(waitingForMatch[msg.sender] == false);
 
+        euint8 baseScore = TFHE.asEuint8(_baseScore);
+        ebool isTwoHundred = TFHE.eq(baseScore, 200);
+        //Throw deliberate error if not 200
+        baseResources[msg.sender] = TFHE.cmux(isTwoHundred, baseScore, errorThrow8);
+
         //  For Testing   //
         matchmaker[0] = testOpponent;
         queueStartTime[testOpponent] = block.number + 10000; 
-        baseResources[testOpponent] = TFHE.randEuint8();
-        ebool lowOpponentResources = TFHE.lt(baseResources[testOpponent], 100);
-        baseResources[testOpponent] = TFHE.cmux(lowOpponentResources, TFHE.add(baseResources[testOpponent], 99), baseResources[testOpponent]);
-        ebool highOpponentResources = TFHE.gt(baseResources[testOpponent], 200);
-        baseResources[testOpponent] = TFHE.cmux(highOpponentResources, TFHE.sub(baseResources[testOpponent], 99), baseResources[testOpponent]);
+        baseResources[testOpponent] = baseScore;
         ///////////
-    
-
-        // Initialize "base resource" value.  It cannot be too low or too high, to prevent underflow/overflow
-        // This value will be used as a comparator later, and is meant to obscure the player's in-game status
-        baseResources[msg.sender] = TFHE.randEuint8();
-        ebool lowResources = TFHE.lt(baseResources[msg.sender], 100);
-        baseResources[msg.sender] = TFHE.cmux(lowResources, TFHE.add(baseResources[msg.sender], 99), baseResources[msg.sender]);
-        ebool highResources = TFHE.gt(baseResources[msg.sender], 200);
-        baseResources[msg.sender] = TFHE.cmux(highResources, TFHE.sub(baseResources[msg.sender], 99), baseResources[msg.sender]);
 
         // If matchmaking queue is empty, become player 1
         address currentPlayer1 = matchmaker[0];
@@ -149,6 +146,8 @@ contract FHEGame is EIP712WithModifier {
         address opponent = currentOpponent[msg.sender];
         euint8 resources = currentResources[msg.sender];
 
+
+
         require(activeMiner[msg.sender] == true);
         require(hasSetTraps[opponent] == true);
 
@@ -189,10 +188,10 @@ contract FHEGame is EIP712WithModifier {
             euint8 opponentCurrentScore = currentResources[opponent];
 
             ebool playerScoreAboveZero = TFHE.gt(playerCurrentScore, playerBaseScore);
-            euint8 playerScore = TFHE.cmux(playerScoreAboveZero, TFHE.sub(playerCurrentScore, playerBaseScore), TFHE.sub(playerBaseScore, playerBaseScore));
+            euint8 playerScore = TFHE.cmux(playerScoreAboveZero, TFHE.sub(playerCurrentScore, playerBaseScore), TFHE.sub(playerBaseScore, TFHE.decrypt(playerBaseScore)));
 
             ebool opponentScoreAboveZero = TFHE.gt(opponentCurrentScore, opponentBaseScore);
-            euint8 opponentScore = TFHE.cmux(opponentScoreAboveZero, TFHE.sub(opponentCurrentScore, opponentBaseScore), TFHE.sub(opponentBaseScore, opponentBaseScore));
+            euint8 opponentScore = TFHE.cmux(opponentScoreAboveZero, TFHE.sub(opponentCurrentScore, opponentBaseScore), TFHE.sub(opponentBaseScore, TFHE.decrypt(opponentBaseScore)));
 
             ebool playerWon = TFHE.gt(playerScore, opponentScore);
             playerPoints[msg.sender] = TFHE.cmux(playerWon, TFHE.add(playerPoints[msg.sender], playerScore), playerPoints[msg.sender]);
@@ -222,7 +221,7 @@ contract FHEGame is EIP712WithModifier {
         require (block.number >= lastAction[msg.sender] + 20);
 
         ebool playerScoreAboveZero = TFHE.gt(currentResources[msg.sender], baseResources[msg.sender]);
-        euint8 playerScore = TFHE.cmux(playerScoreAboveZero, TFHE.sub(currentResources[msg.sender], baseResources[msg.sender]), TFHE.sub(baseResources[msg.sender], baseResources[msg.sender]));
+        euint8 playerScore = TFHE.cmux(playerScoreAboveZero, TFHE.sub(currentResources[msg.sender], baseResources[msg.sender]), TFHE.sub(baseResources[msg.sender], TFHE.decrypt(baseResources[msg.sender])));
         playerPoints[msg.sender] = TFHE.add(playerPoints[msg.sender], playerScore);
 
         inGame[msg.sender] = false;
@@ -246,7 +245,7 @@ contract FHEGame is EIP712WithModifier {
         euint8 playerCurrentScore = currentResources[player];
 
         ebool playerScoreAboveZero = TFHE.gt(playerCurrentScore, playerBaseScore);
-        euint8 playerScore = TFHE.cmux(playerScoreAboveZero, TFHE.sub(playerCurrentScore, playerBaseScore), TFHE.sub(playerBaseScore, playerBaseScore));
+        euint8 playerScore = TFHE.cmux(playerScoreAboveZero, TFHE.sub(playerCurrentScore, playerBaseScore), TFHE.sub(playerBaseScore, TFHE.decrypt(playerBaseScore)));
         return TFHE.decrypt(playerScore);
     }
     
