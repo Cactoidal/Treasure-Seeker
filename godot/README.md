@@ -10,7 +10,7 @@ This is possible by using the "cmux" function.  Comparison operators (less than,
 
 The homomorphic boolean can then be used with cmux, which essentially takes that boolean and returns a homomorphic integer (case true) or a different homomorphic integer (case false).
 
-Anyway, I have about a week to create a game.  Day 1 was spent testing Zama's [tfhe-rs crate](https://github.com/zama-ai/tfhe-rs). I've gotten it to mostly work with ethers-rs.  Strangely, sometimes transactions will revert, for reasons that are not entirely clear.  I'll eventually figure out why.
+Anyway, I have about a week to create a game.  Day 1 was spent testing Zama's [tfhe-rs crate](https://github.com/zama-ai/tfhe-rs). I've gotten it mostly working with ethers-rs.
 
 This game will be pretty simple.  It's a 1v1 game split into two phases: trapping and mining.  During the trap phase, both players choose 3 spaces on the game board to trap.  Then mining begins.
 
@@ -32,4 +32,4 @@ The two "actual scores" are then compared.  Whoever's score is greater is the wi
 
 <img width="1009" alt="1FHEGame" src="https://github.com/Cactoidal/ZAMAfhEVMGame/assets/115384394/f123b91a-66bb-48cf-abfd-70b12105455e">
 
-Basic UI is put together, but a little hard to confirm whether it's working at the moment.
+Basic UI is put together.  I've realized that the "player point balance" also needs to be initialized, which I've accomplished by generating a random euint32, then subtracting it from itself.
