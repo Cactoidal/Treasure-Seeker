@@ -32,4 +32,21 @@ The two "actual scores" are then compared.  Whoever's score is greater is the wi
 
 <img width="1009" alt="1FHEGame" src="https://github.com/Cactoidal/ZAMAfhEVMGame/assets/115384394/f123b91a-66bb-48cf-abfd-70b12105455e">
 
-Basic UI is put together.  I've realized that the "player point balance" also needs to be initialized, which I've accomplished by generating a random euint32, then subtracting it from itself.
+Basic UI is put together.  I've realized that the "player point balance" also needs to be initialized, which I attempted to accomplish by generating a random euint32, then subtracting it from itself.  This did not work.
+
+What _did_ work was using the "decrypt" function on the subtractor, then subtracting, but this is less than desirable because the use of "decrypt" is discouraged except in very specific cases.
+
+I've decided to take a different tack when it comes to initializing values.  Instead of using the built-in PRNG function and manipulating the random value into a suitable range, I will instead ask the player to provide a specific value (such as 0) as a homomorphically encrypted value.
+
+While everyone will know what the initial values are, what matters for this game is obscuring the _changes_ to that value over time.  For instance, both players will start with the same initial "base score" each game.  Whenever they mine a square, that value will change, but it will be impossible for an on-chain observer to know if it went up (wasn't trapped) or down (was trapped).
+
+To set this initial value, my solution is slightly hacky.  The player provides the euint, then the contract checks if that euint is equal to the expected value, setting an ebool to the result.  Cmux checks the ebool, and if it is false, it will revert the transaction with a deliberate error by attempting to set a variable to an uninitialized euint.
+
+I have another problem at the end of the game, however.  From a game design perspective, I think it would be better if the game is instantly lost as soon as you hit a trap.
+
+I had originally planned to do this by checking the "current score" against the "base score", and if the current score is smaller, the contract knows you hit a trap, and would set your "actual score" to zero by subtracting the base score by itself.
+
+This doesn't actually seem to be possible, unless I use "decrypt", which I'm trying to avoid.  So, I have a few options:
+1) use decrypt, accepting that it's suboptimal
+2) change the game's design to directly compare the player's "current scores" at the end, which would mean that it's still possible to win after hitting a trap, which significantly changes the risk calculus and extends the length of the game
+3) try to find some clever use of cmux and filtering to achieve the same design I currently have
