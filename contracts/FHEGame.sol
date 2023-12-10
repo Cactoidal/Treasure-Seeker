@@ -153,49 +153,49 @@ contract FHEGame is EIP712WithModifier {
     }
 
     // If you are happy with your score (or ready to resign), you may signal that you are ready to end the game.
-    function stopMining() public {
-        require(inGame[msg.sender] == true);
-        require(activeMiner[msg.sender] == true);
-        activeMiner[msg.sender] = false;
-        readyToEnd[msg.sender] = true;
-
-        // For Testing
-        address opponent = currentOpponent[msg.sender];
-        activeMiner[opponent] = false;
-        readyToEnd[msg.sender] = true;
-    }
-
+    // If both players have signalled, the game will end.
     // Player scores are obtained by comparing and subtracting the "base resource" from the "current resource".
     // The player scores are then compared to determine the winner.
     // Both players are reinitialized.
-    function endGame() public {
+    function stopMining() public {
+        require(inGame[msg.sender] == true);
+        require(activeMiner[msg.sender] == true);
         address opponent = currentOpponent[msg.sender];
-        require(readyToEnd[msg.sender] == true);
-        require(readyToEnd[opponent] == true);
 
-        euint8 playerBaseScore = baseResources[msg.sender];
-        euint8 playerCurrentScore = currentResources[msg.sender];
-        euint8 opponentBaseScore = baseResources[opponent];
-        euint8 opponentCurrentScore = currentResources[opponent];
+        // For Testing
+        activeMiner[opponent] = false;
+        readyToEnd[msg.sender] = true;
+        ////////
 
-        ebool playerScoreAboveZero = TFHE.gt(playerCurrentScore, playerBaseScore);
-        euint8 playerScore = TFHE.cmux(playerScoreAboveZero, TFHE.sub(playerCurrentScore, playerBaseScore), TFHE.sub(playerBaseScore, playerBaseScore));
+        if (readyToEnd[opponent] == true) {
 
-        ebool opponentScoreAboveZero = TFHE.gt(opponentCurrentScore, opponentBaseScore);
-        euint8 opponentScore = TFHE.cmux(opponentScoreAboveZero, TFHE.sub(opponentCurrentScore, opponentBaseScore), TFHE.sub(opponentBaseScore, opponentBaseScore));
+            euint8 playerBaseScore = baseResources[msg.sender];
+            euint8 playerCurrentScore = currentResources[msg.sender];
+            euint8 opponentBaseScore = baseResources[opponent];
+            euint8 opponentCurrentScore = currentResources[opponent];
 
-        ebool playerWon = TFHE.gt(playerScore, opponentScore);
-        playerPoints[msg.sender] = TFHE.cmux(playerWon, TFHE.add(playerPoints[msg.sender], playerScore), playerPoints[msg.sender]);
-        ebool opponentWon = TFHE.gt(opponentScore, playerScore);
-        playerPoints[opponent] = TFHE.cmux(opponentWon, TFHE.add(playerPoints[opponent], opponentScore), playerPoints[opponent]);
+            ebool playerScoreAboveZero = TFHE.gt(playerCurrentScore, playerBaseScore);
+            euint8 playerScore = TFHE.cmux(playerScoreAboveZero, TFHE.sub(playerCurrentScore, playerBaseScore), TFHE.sub(playerBaseScore, playerBaseScore));
 
-        inGame[msg.sender] = false;
-        inGame[opponent] = false;
-        readyToEnd[msg.sender] = false;
-        readyToEnd[opponent] = false;
-        hasSetTraps[msg.sender] = false;
-        hasSetTraps[opponent] = false;
+            ebool opponentScoreAboveZero = TFHE.gt(opponentCurrentScore, opponentBaseScore);
+            euint8 opponentScore = TFHE.cmux(opponentScoreAboveZero, TFHE.sub(opponentCurrentScore, opponentBaseScore), TFHE.sub(opponentBaseScore, opponentBaseScore));
 
+            ebool playerWon = TFHE.gt(playerScore, opponentScore);
+            playerPoints[msg.sender] = TFHE.cmux(playerWon, TFHE.add(playerPoints[msg.sender], playerScore), playerPoints[msg.sender]);
+            ebool opponentWon = TFHE.gt(opponentScore, playerScore);
+            playerPoints[opponent] = TFHE.cmux(opponentWon, TFHE.add(playerPoints[opponent], opponentScore), playerPoints[opponent]);
+
+            inGame[msg.sender] = false;
+            inGame[opponent] = false;
+            activeMiner[msg.sender] = false;
+            readyToEnd[opponent] = false;
+            hasSetTraps[msg.sender] = false;
+            hasSetTraps[opponent] = false;
+        }
+        else {
+            activeMiner[msg.sender] = false;
+            readyToEnd[msg.sender] = true;
+        }
     }
 
     // If a player has not acted for 20 blocks, you may end the game.
