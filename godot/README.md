@@ -44,7 +44,7 @@ To set this initial value, my solution is slightly hacky.  The player provides t
 
 I have another problem at the end of the game, however.  From a game design perspective, I think it would be better if the game is instantly lost as soon as you hit a trap.
 
-I had originally planned to do this by checking the "current score" against the "base score", and if the current score is smaller, the contract knows you hit a trap, and would set your "actual score" to zero by subtracting the base score by itself.
+I had originally planned to do this by checking the "current score" against the "base score", and if the current score is smaller, the contract knows you hit a trap, and would set your "actual score" to 0 by subtracting the base score by itself.
 
 This doesn't actually seem to be possible, unless I use "decrypt", which I'm trying to avoid.  So, I have a few options:
 1) use decrypt, accepting that it's suboptimal
