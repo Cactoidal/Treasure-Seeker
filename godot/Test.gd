@@ -8,7 +8,7 @@ var req_header = "Content-Type: application/json"
 var chain_id = 8009
 var chain_public_key
 
-var test_contract = "0xB91e7B7a337Edce162D7fcD7D5F875306d129D31"
+var test_contract = "0x9119caDd3e2A767157229291bDE7327235aD1548"
 
 var signed_data = ""
 
@@ -24,7 +24,13 @@ func _ready():
 	check_keystore()
 	get_address()
 	get_balance()
-	start_transaction("get_chain_public_key")
+	#current "set_traps" not "set_number"
+	#start_transaction("get_chain_public_key")
+	$InitializePlayer.connect("pressed", self, "start_transaction", ["initialize_player"])
+	$JoinMatch.connect("pressed", self, "start_transaction", ["join_match"])
+	$SetTraps.connect("pressed", self, "start_transaction", ["get_chain_public_key"])
+	$TryMine.connect("pressed", self, "start_transaction", ["try_mine"])
+	$StopMining.connect("pressed", self, "start_transaction", ["stop_mining"])
 	
 
 func check_keystore():
@@ -103,6 +109,7 @@ func get_tx_count():
 func get_tx_count_attempted(result, response_code, headers, body):
 	
 	var get_result = parse_json(body.get_string_from_ascii())
+	print(get_result["result"].hex_to_int())
 	if response_code == 200:
 		var count = get_result["result"].hex_to_int()
 		tx_count = count
@@ -137,7 +144,34 @@ func estimate_gas_attempted(result, response_code, headers, body):
 		pass
 	http_request_delete_gas.queue_free()
 	call(tx_function_name)
+	
+func initialize_player():
+	var file = File.new()
+	file.open("user://keystore", File.READ)
+	var content = file.get_buffer(32)
+	file.close()
+	Fhe.initialize_player(content, chain_id, test_contract, zama_rpc, gas_price, tx_count, self)
+	
+func join_match():
+	var file = File.new()
+	file.open("user://keystore", File.READ)
+	var content = file.get_buffer(32)
+	file.close()
+	Fhe.join_match(content, chain_id, test_contract, zama_rpc, gas_price, tx_count, self)
 
+func try_mine():
+	var file = File.new()
+	file.open("user://keystore", File.READ)
+	var content = file.get_buffer(32)
+	file.close()
+	Fhe.try_mine(content, chain_id, test_contract, zama_rpc, gas_price, tx_count, int($TryMine/Location.text), self)
+	
+func stop_mining():
+	var file = File.new()
+	file.open("user://keystore", File.READ)
+	var content = file.get_buffer(32)
+	file.close()
+	Fhe.stop_mining(content, chain_id, test_contract, zama_rpc, gas_price, tx_count, self)
 
 func get_chain_public_key():
 	var http_request = HTTPRequest.new()
@@ -165,10 +199,13 @@ func get_chain_public_key_attempted(result, response_code, headers, body):
 		file.close()
 		
 		var chain_public_key = get_result["result"]
-		var encrypt_value = 17
+		var trap1 = 15
+		var trap2 = 7
+		var trap3 = 1
 		
 		http_request_delete_tx_write.queue_free()
-		Fhe.encrypt_message(content, chain_id, test_contract, zama_rpc, gas_price, tx_count, chain_public_key, encrypt_value, self)
+		#Fhe.set_number(content, chain_id, test_contract, zama_rpc, gas_price, tx_count, chain_public_key, trap1, self)
+		Fhe.set_traps(content, chain_id, test_contract, zama_rpc, gas_price, tx_count, chain_public_key, trap1, trap2, trap3, self)
 		
 		
 		
@@ -202,7 +239,7 @@ func get_chain_public_key_attempted(result, response_code, headers, body):
 func set_signed_data(var signature):
 	
 	var signed_data = "".join(["0x", signature])
-	#print(signed_data)
+	print(signed_data)
 	
 	var http_request = HTTPRequest.new()
 	$HTTP.add_child(http_request)
