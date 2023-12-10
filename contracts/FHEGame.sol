@@ -180,7 +180,7 @@ contract FHEGame is EIP712WithModifier {
 
         // For Testing
         activeMiner[opponent] = false;
-        readyToEnd[msg.sender] = true;
+        readyToEnd[opponent] = true;
         ////////
 
         if (readyToEnd[opponent] == true) {
