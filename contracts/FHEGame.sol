@@ -8,6 +8,7 @@ contract FHEGame is EIP712WithModifier {
 
     mapping (address => euint8) public secretNumber;
     bool public success;
+    mapping (address => bool) playerInitialized;
     mapping (address => euint32) playerPoints;
 
 
@@ -35,7 +36,19 @@ contract FHEGame is EIP712WithModifier {
     constructor() EIP712WithModifier("Authorization token", "1") {
     }
 
+    function initializePointBalance() public {
+        require(playerInitialized[msg.sender] == false);
+        playerInitialized[msg.sender] = true;
+        playerPoints[msg.sender] = TFHE.randEuint32();
+        playerPoints[msg.sender] = TFHE.sub(playerPoints[msg.sender],  playerPoints[msg.sender]);
+
+        // For Testing   //
+        playerPoints[testOpponent] = TFHE.randEuint32();
+        playerPoints[testOpponent] = TFHE.sub(playerPoints[testOpponent],  playerPoints[testOpponent]);
+    }
+
     function joinMatch() public {
+        require(playerInitialized[msg.sender] == true);
         require(inGame[msg.sender] == false);
         require(waitingForMatch[msg.sender] == false);
 
@@ -288,4 +301,10 @@ contract FHEGame is EIP712WithModifier {
 
 
   }
+
+
+
+
+
+
 
