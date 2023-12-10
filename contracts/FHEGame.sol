@@ -12,8 +12,8 @@ contract FHEGame is EIP712WithModifier {
 
 
     address[2] matchmaker;
-    mapping (address => uint) queueStartTime;
-    mapping (address => bool) waitingForMatch;
+    mapping (address => uint) public queueStartTime;
+    mapping (address => bool) public waitingForMatch;
     mapping (address => bool) public inGame;
     mapping (address => address) public currentOpponent;
     mapping (address => euint8) baseResources;
@@ -44,10 +44,11 @@ contract FHEGame is EIP712WithModifier {
         queueStartTime[testOpponent] = block.number + 10000; 
         baseResources[testOpponent] = TFHE.randEuint8();
         ebool lowOpponentResources = TFHE.lt(baseResources[testOpponent], 100);
-        baseResources[testOpponent] = TFHE.cmux(lowOpponentResources, TFHE.add(baseResources[msg.sender], 99), baseResources[msg.sender]);
+        baseResources[testOpponent] = TFHE.cmux(lowOpponentResources, TFHE.add(baseResources[testOpponent], 99), baseResources[testOpponent]);
         ebool highOpponentResources = TFHE.gt(baseResources[testOpponent], 200);
-        baseResources[testOpponent] = TFHE.cmux(highOpponentResources, TFHE.sub(baseResources[msg.sender], 99), baseResources[msg.sender]);
+        baseResources[testOpponent] = TFHE.cmux(highOpponentResources, TFHE.sub(baseResources[testOpponent], 99), baseResources[testOpponent]);
         ///////////
+    
 
         // Initialize "base resource" value.  It cannot be too low or too high, to prevent underflow/overflow
         // This value will be used as a comparator later, and is meant to obscure the player's in-game status
@@ -287,10 +288,4 @@ contract FHEGame is EIP712WithModifier {
 
 
   }
-
-
-
-
-
-
 
