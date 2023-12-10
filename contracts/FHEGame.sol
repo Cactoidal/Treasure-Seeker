@@ -43,29 +43,38 @@ contract FHEGame is EIP712WithModifier {
         matchmaker[0] = testOpponent;
         queueStartTime[testOpponent] = block.number + 10000; 
         baseResources[testOpponent] = TFHE.randEuint8();
+        ebool lowOpponentResources = TFHE.lt(baseResources[testOpponent], 100);
+        baseResources[testOpponent] = TFHE.cmux(lowOpponentResources, TFHE.add(baseResources[msg.sender], 99), baseResources[msg.sender]);
         ///////////
 
-        address currPlayer1 = matchmaker[0];
-        if (currPlayer1 == address(0x0)) {
+        baseResources[msg.sender] = TFHE.randEuint8();
+        ebool lowResources = TFHE.lt(baseResources[msg.sender], 100);
+        baseResources[msg.sender] = TFHE.cmux(lowResources, TFHE.add(baseResources[msg.sender], 99), baseResources[msg.sender]);
+
+        address currentPlayer1 = matchmaker[0];
+        if (currentPlayer1 == address(0x0)) {
             matchmaker[0] = msg.sender;
             waitingForMatch[msg.sender] = true;
             queueStartTime[msg.sender] = block.number + 50;
         }
-        else if (queueStartTime[currPlayer1] < block.number) {
-            waitingForMatch[currPlayer1] = false;
+        else if (queueStartTime[currentPlayer1] < block.number) {
+            waitingForMatch[currentPlayer1] = false;
             matchmaker[0] = msg.sender;
             waitingForMatch[msg.sender] = true;
             queueStartTime[msg.sender] = block.number + 50;
         }
         else {
-            waitingForMatch[currPlayer1] = false;
+            waitingForMatch[currentPlayer1] = false;
             matchmaker[1] = msg.sender;
 
-            currentOpponent[msg.sender] = currPlayer1;
-            currentOpponent[currPlayer1] = msg.sender;
+            currentOpponent[msg.sender] = currentPlayer1;
+            currentOpponent[currentPlayer1] = msg.sender;
 
-            inGame[currPlayer1] = true;
+            inGame[currentPlayer1] = true;
             inGame[msg.sender] = true;
+
+            currentResources[currentPlayer1] = baseResources[currentPlayer1];
+            currentResources[msg.sender] = baseResources[msg.sender];
         }
 
     }
@@ -83,12 +92,19 @@ contract FHEGame is EIP712WithModifier {
 
     function tryMine(uint8 location) public {
         address opponent = currentOpponent[msg.sender];
+        euint8 resources = currentResources[msg.sender];
         require(hasSetTraps[msg.sender] == true);
         require(hasSetTraps[opponent] == true);
+        euint8 detectTrappedBase = TFHE.randEuint8();
+        ebool lowRand = TFHE.eq(detectTrappedBase, 0);
+        detectTrappedBase = TFHE.cmux(lowRand, TFHE.add(detectTrappedBase, 3), detectTrappedBase);
+        euint8 detectTrapped = detectTrappedBase;
         for (uint i; i < 3; i++) {
             ebool trapped = TFHE.eq(traps[opponent][i], location);
-
+            detectTrapped = TFHE.cmux(trapped, TFHE.sub(detectTrapped, 1), detectTrapped);
         }
+        ebool wasTrapped = TFHE.lt(detectTrapped, detectTrappedBase);
+        currentResources[msg.sender] = TFHE.cmux(wasTrapped, TFHE.sub(resources, 33), TFHE.add(resources, 1));
     }
 
 
