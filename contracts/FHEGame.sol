@@ -199,91 +199,27 @@ contract FHEGame is EIP712WithModifier {
     }
 
 
+    // Retrieve your current score using EIP712 key exchange
+    function currentScore(
+        bytes32 publicKey,
+        bytes calldata signature
+        ) public view onlySignedPublicKey(publicKey, signature) returns (bytes memory) {
+            euint8 playerBaseScore = baseResources[msg.sender];
+            euint8 playerCurrentScore = currentResources[msg.sender];
 
+            ebool playerScoreAboveZero = TFHE.gt(playerCurrentScore, playerBaseScore);
+            euint8 playerScore = TFHE.cmux(playerScoreAboveZero, TFHE.sub(playerCurrentScore, playerBaseScore), TFHE.sub(playerBaseScore, playerBaseScore));
+            return TFHE.reencrypt(playerScore, publicKey, 0);
+        }
+
+
+
+    // Debug function
     function setNumber(bytes calldata _number) public {
         euint8 number = TFHE.asEuint8(_number);
         secretNumber[msg.sender] = number;
         success = true;
     }
-
-    function getEpoch() public view returns (uint) {
-        return ( (block.number + 50) - epochStart) / epochDivisor;
-    }
-
-/*
-
-    function mine(bytes calldata _location) public {
-        uint epoch = getEpoch();
-        euint8 location = TFHE.asEuint8(_location);
-        euint16 availableResources = epochResource[epoch][location];
-        // If location resources are 0, but not yet mined out, generate random resources
-        availableResources = TFHE.cmux(epochMinedOut[epoch][location], availableResources, TFHE.randEuint16());
-        // Random mine amount
-        euint16 mineAmount = TFHE.div(TFHE.randEuint16(), 5);
-        // Check if there are enough resources for the mine amount
-        ebool enoughResources = TFHE.le(mineAmount, availableResources);
-        // If there aren't enough, mine amount is reduced to the available resource amount
-        mineAmount = TFHE.cmux(enoughResources, mineAmount, availableResources);
-        // Subtract mine amount from resources
-        availableResources = TFHE.cmux(enoughResources, TFHE.sub(availableResources, mineAmount), TFHE.sub(availableResources, availableResources));
-        // If there are no resources left, the location is mined out
-        epochMinedOut[epoch][location] = TFHE.eq(availableResources, 0);
-        // Give player the mine amount
-        playerBalance[msg.sender] = TFHE.add(playerBalance[msg.sender], mineAmount);
-        // Adjust the location resources
-        epochResource[epoch][location] = availableResources;
-
-        success = true;
-    }
-*/
-
-     function mine(uint8 location) public {
-        uint epoch = getEpoch();
-        euint16 availableResources = epochResource[epoch][location];
-        // If location resources are 0, but not yet mined out, generate random resources
-        availableResources = TFHE.cmux(epochMinedOut[epoch][location], availableResources, TFHE.randEuint16());
-        // Random mine amount
-        euint16 mineAmount = TFHE.div(TFHE.randEuint16(), 5);
-        // Check if there are enough resources for the mine amount
-        ebool enoughResources = TFHE.le(mineAmount, availableResources);
-        // If there aren't enough, mine amount is reduced to the available resource amount
-        mineAmount = TFHE.cmux(enoughResources, mineAmount, availableResources);
-        // Subtract mine amount from resources
-        availableResources = TFHE.cmux(enoughResources, TFHE.sub(availableResources, mineAmount), TFHE.sub(availableResources, availableResources));
-        // If there are no resources left, the location is mined out
-        epochMinedOut[epoch][location] = TFHE.eq(availableResources, 0);
-        // Give player the mine amount
-        playerPoints[msg.sender] = TFHE.add(playerPoints[msg.sender], mineAmount);
-        // Adjust the location resources
-        epochResource[epoch][location] = availableResources;
-
-        success = true;
-    }
-    /*
-    function mine2(uint8 location) public {
-        uint epoch = getEpoch();
-        epochResource[epoch][location] = TFHE.randEuint16();
-    }
-*/
-     function mine2(uint8 location) public {
-        uint epoch = getEpoch();
-        euint16 availableResources = epochResource[epoch][location];
-        ebool resourcesUnavailable = TFHE.eq(availableResources, 0);
-        epochResource[epoch][location] = TFHE.cmux(resourcesUnavailable, TFHE.randEuint16(), availableResources);
-    }
-
-    function mine3() public view returns (euint16) {
-        return TFHE.randEuint16();
-
-    }
-
-    function startMine(uint8 location) public {
-        uint epoch = getEpoch();
-        require(!epochMineStarted[epoch][location]);
-        epochMineStarted[epoch][location] = true;
-        epochResource[epoch][location] = TFHE.randEuint16();
-    }
-
     
 
 
