@@ -36,4 +36,4 @@ Basic UI is put together.  I've realized that the "player point balance" also ne
 
 What _did_ work was using the "decrypt" function on the subtractor, then subtracting, but this is less than desirable because the use of "decrypt" is discouraged except in very specific cases.
 
-However, time is limited, so if I can, I'll revisit the code later to try and remove the decrypts.  For now, everything seems to be working - the player can join a game, set traps, mine a space to increase their score, and end the game, earning points.  I'll create a nicer UI tomorrow.
+However, time is limited, so if I can, I'll revisit the code later to try and remove the decrypts.  For now, everything seems to be working - the player can join a game, set traps, mine a space to increase their score, and end the game, earning points if they win.  I'll create a nicer UI tomorrow.
