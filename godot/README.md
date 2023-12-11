@@ -50,4 +50,8 @@ There will also be a clickable button that progresses the phases ("finish settin
 
 Rather than ending automatically, the player will be prompted to end the game; the reason being that, were the "end game" transaction automatic when a trap is hit, an on-chain observer would be able to guess with high certainty that the other player had hit a trap, since the transaction would come out very quickly after the previous transaction finished. 
 
+https://github.com/Cactoidal/ZAMAfhEVMGame/assets/115384394/9acfc5c1-d582-4ada-a069-5ec3ef136d97
+
+
+
 
