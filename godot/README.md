@@ -52,6 +52,9 @@ Rather than ending automatically, the player will be prompted to end the game; t
 
 https://github.com/Cactoidal/ZAMAfhEVMGame/assets/115384394/9acfc5c1-d582-4ada-a069-5ec3ef136d97
 
+No sending transactions yet, but we're getting there:
+
+https://github.com/Cactoidal/ZAMAfhEVMGame/assets/115384394/dac8946c-ec47-434e-bba1-5bcf29e75e16
 
 
 
