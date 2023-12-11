@@ -37,3 +37,17 @@ Basic UI is put together.  I've realized that the "player point balance" also ne
 What _did_ work was using the "decrypt" function on the subtractor, then subtracting, but this is less than desirable because the use of "decrypt" is discouraged except in very specific cases.
 
 However, time is limited, so if I can, I'll revisit the code later to try and remove the decrypts.  For now, everything seems to be working - the player can join a game, set traps, mine a space to increase their score, and end the game, earning points if they win.  I'll create a nicer UI tomorrow.
+
+# Day 3
+
+The game will have a top-down camera, with the player controlling a 3D character on a flat plateau.
+
+https://github.com/Cactoidal/ZAMAfhEVMGame/assets/115384394/5d5d69e4-84fa-4e2b-a18d-c774b0290e5c
+
+When you move around, invisible tiles will become visible when you stand on top of them.  As mentioned above, the game will be split into two phases.  When pressing space bar on top of a tile, you will either place a trap (during the trap phase), or place a mining machine (during the mining phase).
+
+There will also be a clickable button that progresses the phases ("finish setting traps" and "stop mining", respectively).  Mining machines will have some kind of visual indicator to show they are "working" while the transaction is being processed.  Once the game detects a change in the player's score, it will resolve the fate of that machine (if it hit a trap, it will explode, and the game session will end).
+
+Rather than ending automatically, the player will be prompted to end the game; the reason being that, were the "end game" transaction automatic when a trap is hit, an on-chain observer would be able to guess with high certainty that the other player had hit a trap, since the transaction would come out very quickly after the previous transaction finished. 
+
+
