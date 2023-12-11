@@ -2,7 +2,7 @@
 
 I've decided to try building a game using [Zama's fhEVM](https://www.zama.ai/fhevm), a custom EVM blockchain where data can be encrypted and operated upon homomorphically.  
 
-Homomorphic encryption allows the blockchain to store secret information, and only reveal it to specified users under certain conditions.  It's a bit more flexible than an oracle in that it's possible to manipulate the encrypted values directly on-chain, but there are caveats: it's expensive, the data types are limited, and contract logic needs to prevent information from leaking.
+Homomorphic encryption allows the blockchain to store secret information, and only reveal it to specified users under certain conditions.  It's a different from an oracle in that it's possible to manipulate the encrypted values directly on-chain, but there are caveats: it's expensive, the data types are limited, and contract logic needs to prevent information from leaking.
 
 By the latter point, I mean that conditional checking (such as "is this homomorphic number greater than another number") must be written to prevent an attacker from figuring out the homomorphic number by repeatedly guessing.
 
