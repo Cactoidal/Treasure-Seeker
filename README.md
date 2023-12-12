@@ -15,3 +15,5 @@
 [Allsky Skybox](https://github.com/rpgwhitelock/AllSkyFree_Godot/blob/master/addons/AllSkyFree/Skyboxes/AllSkyFree_Sky_OvercastLow_Equirect.png) by rpgwhitelock
 
 [Procedural Terrain Shader](https://www.reddit.com/r/godot/comments/z7r13b/cheap_3d_terrain_generator_with_noise_texture_for/) by AllenGnr
+
+[Pixel Water Shader](https://godotshaders.com/shader/pixel-ghibli-water/) by auntygames
