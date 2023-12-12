@@ -64,6 +64,17 @@ The infinite terrain is just 3 meshes that leapfrog each other as the camera mov
 
 [AllSky's skyboxes](https://github.com/rpgwhitelock/AllSkyFree_Godot/blob/master/addons/AllSkyFree/Skyboxes/AllSkyFree_Sky_OvercastLow_Equirect.png) are once again very handy.  I've got it slowly rotating to make the clouds seem like they're moving.  The moon, a TextureRectangle, completes the illusion.
 
+# Day 4
+
+Still a bit of work to do.  Transactions are hooked up (but turned off for the video I'm about to post).  View functions constitute the biggest remaining hurdle.  Godot needs to know the player's on-chain score to determine whether they hit a trap.  That score is homomorphically encrypted, which means the game needs to request the decrypted value.
+
+Right now, I just have a debug function that decrypts the value for anyone.  Obviously, that's not secure.  The correct way to retrieve these values involves creating a public/private keypair locally, and sending the public key to the RPC, which will decrypt the homomorphic value and reencrypt it with the public key before sending it back.
+
+https://github.com/Cactoidal/Treasure-Seeker/assets/115384394/7f8e67c0-f8d7-4e90-98b9-cfb92aea1c08
+
+The whole shebang.  I'm liking the minimal style, so while there need to be some indicators during the mining phase, I think this is pretty much set graphics-wise.  The background is auntygames' [Pixel Water shader](https://godotshaders.com/shader/pixel-ghibli-water/).  It's been applied as a Viewport texture to a plane mesh underneath the cube mesh the player walks on.  Pretty neat.
+
+
 
 
 
