@@ -76,7 +76,7 @@ The whole shebang.  I'm liking the minimal style, so while there need to be some
 
 ## Day 5
 
-After some assistance from ChatGPT and quite a bit of trial and error, I've now implemented the EIP712 signing standard expected by the contract.  This allows the player to generate a crypto_box public/private keypair using libsodium-sys, sign the public key, and pass it to the contract.  Next up: making the whole game work, now that all the pieces have been assembled.
+After some assistance from ChatGPT and quite a bit of trial and error, I've now implemented the EIP712 signing standard expected by the contract.  This allows the player to generate a crypto_box public/private keypair using libsodium-sys, sign the public key, and pass it to the contract.  Next up: making the game ready for competitive play, now that all the pieces have been assembled.
 
 
 
