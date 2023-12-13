@@ -603,11 +603,11 @@ async fn get_cryptobox_keypair(key: PoolArray<u8>, chain_id: u64, fhe_contract_a
 
 
 #[method]
-fn decode_crypto_box(box_public_key: GodotString, box_secret_key: GodotString, secret: GodotString) -> GodotString {
+fn decode_crypto_box(box_public_key: GodotString, box_secret_key: GodotString, secret: GodotString) -> u8 {
     let raw_hex: String = secret.to_string();
     let decoded: Bytes = ethers::abi::AbiDecode::decode_hex(raw_hex).unwrap();
-    let secret_vec: Vec<u8> = decoded.iter().map(|x| x.clone()).collect();
-    let secret_bytes = &secret_vec[..]; 
+    let ciphertext_vec: Vec<u8> = decoded.iter().map(|x| x.clone()).collect();
+    let ciphertext_bytes = &ciphertext_vec[..]; 
 
     let public_vec = hex::decode(box_public_key.to_string()).unwrap();
     let public_bytes = &public_vec[..];
@@ -621,23 +621,21 @@ fn decode_crypto_box(box_public_key: GodotString, box_secret_key: GodotString, s
     public_key[..public_bytes.len()].copy_from_slice(public_bytes);
     secret_key[..secret_bytes.len()].copy_from_slice(secret_bytes);
 
-    let mut decrypted_message = vec![0u8; secret_bytes.len() + 30];
+    let mut decrypted_message = vec![0u8; ciphertext_bytes.len()];
 
     unsafe {
-    let check = crypto_box_seal_open(
+    crypto_box_seal_open(
                 decrypted_message.as_mut_ptr(),
-                secret_bytes.as_ptr(),
-                secret_bytes.len() as u64, 
+                ciphertext_bytes.as_ptr(),
+                ciphertext_bytes.len() as u64, 
                 public_key.as_ptr(), 
                 secret_key.as_ptr());
-    
-                godot_print!("{:?}", check);
-                godot_print!("{:?}", decrypted_message);
     }
-    
 
-    let return_string = "hello";
-    return_string.into()
+    let number = [decrypted_message[0]];
+    let decrypted_number = u8::from_be_bytes(number);
+
+    decrypted_number
 }
 
 
