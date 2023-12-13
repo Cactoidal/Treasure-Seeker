@@ -38,7 +38,7 @@ What _did_ work was using the "decrypt" function on the subtractor, then subtrac
 
 However, time is limited, so if I can, I'll revisit the code later to try and remove the decrypts.  For now, everything seems to be working - the player can join a game, set traps, mine a space to increase their score, and end the game, earning points if they win.  I'll create a nicer UI tomorrow.
 
-# Day 3
+## Day 3
 
 The game will have a top-down camera, with the player controlling a 3D character on a flat plateau.
 
@@ -64,7 +64,7 @@ The infinite terrain is just 3 meshes that leapfrog each other as the camera mov
 
 [AllSky's skyboxes](https://github.com/rpgwhitelock/AllSkyFree_Godot/blob/master/addons/AllSkyFree/Skyboxes/AllSkyFree_Sky_OvercastLow_Equirect.png) are once again very handy.  I've got it slowly rotating to make the clouds seem like they're moving.  The moon, a TextureRectangle, completes the illusion.
 
-# Day 4
+## Day 4
 
 Still a bit of work to do.  Transactions are hooked up (but turned off for the video I'm about to post).  View functions constitute the biggest remaining hurdle.  Godot needs to know the player's on-chain score to determine whether they hit a trap.  That score is homomorphically encrypted, which means the game needs to request the decrypted value.
 
@@ -74,6 +74,9 @@ https://github.com/Cactoidal/Treasure-Seeker/assets/115384394/7f8e67c0-f8d7-4e90
 
 The whole shebang.  I'm liking the minimal style, so while there need to be some indicators during the mining phase, I think this is pretty much set graphics-wise.  The background is auntygames' [Pixel Water shader](https://godotshaders.com/shader/pixel-ghibli-water/).  It's been applied as a Viewport texture to a plane mesh underneath the cube mesh the player walks on.  Pretty neat.
 
+## Day 5
+
+After some assistance from ChatGPT and quite a bit of trial and error, I've now implemented the EIP712 signing standard expected by the contract.  This allows the player to generate a crypto_box public/private keypair using libsodium-sys, sign the public key, and pass it to the contract.  Next up: making the whole game work, now that all the pieces have been assembled.
 
 
 
