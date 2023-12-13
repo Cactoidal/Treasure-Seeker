@@ -1,7 +1,9 @@
 use gdnative::{prelude::*, core_types::ToVariant};
 use ethers::{core::{abi::{struct_def::StructFieldType, AbiEncode, AbiDecode}, types::*, k256::elliptic_curve::consts::U8}, signers::*, providers::*, prelude::SignerMiddleware};
-use ethers_contract::{abigen};
+use ethers_contract::{abigen, Eip712, EthAbiType};
 use ethers::core::types::transaction::eip2718::TypedTransaction;
+use ethers::types::transaction::eip712::Eip712;
+use ethers::utils::keccak256;
 use std::{convert::TryFrom, sync::Arc};
 use tokio::runtime::{Builder, Runtime};
 use tokio::task::LocalSet;
@@ -10,7 +12,9 @@ use futures::Future;
 use tfhe::{prelude::*, CompactFheUint8List};
 use tfhe::{generate_keys, set_server_key, ConfigBuilder, FheUint32, FheUint8, CompactFheUint32List, CompactPublicKey};
 use hex::*;
+use serde_json::json;
 use bincode::deserialize;
+use libsodium_sys::{crypto_box_keypair, crypto_box_seal_open, crypto_box_SEALBYTES};
 
 
 
@@ -50,7 +54,6 @@ abigen!(
     event_derives(serde::Deserialize, serde::Serialize)
 );
 
-
 struct NewFuture(Result<(), Box<dyn std::error::Error + 'static>>);
 
 impl ToVariant for NewFuture {
@@ -68,6 +71,17 @@ impl OwnedToVariant for NewStructFieldType {
 impl Future for NewFuture {
     type Output = NewStructFieldType;
     fn poll(self: Pin<&mut Self>, _: &mut std::task::Context<'_>) -> Poll<<Self as futures::Future>::Output> { todo!() }
+}
+
+#[derive(Eip712, Clone, EthAbiType, Debug)]
+#[eip712(
+name = "Authorization token",
+version = "1",
+chain_id = 8009,
+verifying_contract = "0x4F8aE29A3afB656dB0D947dD78969Aec7E148161"
+)]
+struct Reencrypt {
+    publicKey: [u8; 32]
 }
 
 #[derive(NativeClass, Debug, ToVariant, FromVariant)]
@@ -105,6 +119,36 @@ let return_string: GodotString = format!("0x{}", key_slice).into();
 return_string
 
 }
+
+#[method]
+fn get_opponent(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: GodotString, rpc: GodotString) -> GodotString {
+
+let vec = &key.to_vec();
+
+let keyset = &vec[..]; 
+
+let prewallet : LocalWallet = LocalWallet::from_bytes(&keyset).unwrap();
+    
+let wallet: LocalWallet = prewallet.with_chain_id(chain_id);
+
+let user_address: Address = wallet.address();
+
+let provider = Provider::<Http>::try_from(rpc.to_string()).expect("could not instantiate HTTP Provider");
+
+let contract_address: Address = fhe_contract_address.to_string().parse().unwrap();
+
+let client = SignerMiddleware::new(provider, wallet);
+
+let contract = FHEABI::new(contract_address.clone(), Arc::new(client.clone()));
+
+let calldata = contract.current_opponent(user_address).calldata().unwrap();
+
+let return_string: GodotString = calldata.to_string().into();
+
+return_string
+
+}
+
 
 #[method]
 #[tokio::main]
@@ -509,8 +553,92 @@ return_string
 
 }
 
+#[method]
+#[tokio::main]
+async fn get_cryptobox_keypair(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: GodotString, rpc: GodotString, ui_node: Ref<Control>) -> NewFuture {
+    let vec = &key.to_vec();
+
+    let keyset = &vec[..]; 
+         
+    let prewallet : LocalWallet = LocalWallet::from_bytes(&keyset).unwrap();
+    
+    let wallet: LocalWallet = prewallet.with_chain_id(chain_id);
+    
+    let user_address = wallet.address();
+    
+    let provider = Provider::<Http>::try_from(rpc.to_string()).expect("could not instantiate HTTP Provider");
+    
+    let contract_address: Address = fhe_contract_address.to_string().parse().unwrap();
+    
+    let client = SignerMiddleware::new(provider, wallet.clone());
+    
+    let contract = FHEABI::new(contract_address.clone(), Arc::new(client.clone()));
+
+    let mut public_key = [0u8; libsodium_sys::crypto_box_PUBLICKEYBYTES as usize];
+    let mut secret_key = [0u8; libsodium_sys::crypto_box_SECRETKEYBYTES as usize];
+  
+    unsafe {
+    let keypair = crypto_box_keypair(public_key.as_mut_ptr(),  secret_key.as_mut_ptr());
+    }
+
+    let new_eip712 = Reencrypt {
+        publicKey: public_key
+    };
+   
+    let signature: Bytes = wallet.sign_typed_data(&new_eip712).await.unwrap().to_vec().into();
+
+    let calldata = contract.test_decrypt(public_key, signature).calldata().unwrap();
+
+    let hex_public_key = hex::encode(&public_key);
+    let hex_secret_key = hex::encode(&secret_key);
+
+    let node: TRef<Control> = unsafe { ui_node.assume_safe() };
+
+    unsafe {
+        node.call("set_box_keys", &[hex_public_key.to_variant(), hex_secret_key.to_variant(), calldata.to_string().to_variant()])
+    };
+
+    NewFuture(Ok(()))
+}
 
 
+#[method]
+fn decode_crypto_box(box_public_key: GodotString, box_secret_key: GodotString, secret: GodotString) -> GodotString {
+    let raw_hex: String = secret.to_string();
+    let decoded: Bytes = ethers::abi::AbiDecode::decode_hex(raw_hex).unwrap();
+    let secret_vec: Vec<u8> = decoded.iter().map(|x| x.clone()).collect();
+    let secret_bytes = &secret_vec[..]; 
+
+    let public_vec = hex::decode(box_public_key.to_string()).unwrap();
+    let public_bytes = &public_vec[..];
+    
+    let secret_vec = hex::decode(box_secret_key.to_string()).unwrap();
+    let secret_bytes = &secret_vec[..];
+
+    let mut public_key = [0u8; 32];
+    let mut secret_key = [0u8; 32];
+
+    public_key[..public_bytes.len()].copy_from_slice(public_bytes);
+    secret_key[..secret_bytes.len()].copy_from_slice(secret_bytes);
+
+    let mut decrypted_message = vec![0u8; secret_bytes.len() + 30];
+
+    unsafe {
+    let check = crypto_box_seal_open(
+                decrypted_message.as_mut_ptr(),
+                secret_bytes.as_ptr(),
+                secret_bytes.len() as u64, 
+                public_key.as_ptr(), 
+                secret_key.as_ptr());
+    
+                godot_print!("{:?}", check);
+                godot_print!("{:?}", decrypted_message);
+    }
+    
+
+    let return_string = "hello";
+    return_string.into()
+}
 
 
 #[method]
