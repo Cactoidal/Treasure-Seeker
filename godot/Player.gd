@@ -28,7 +28,19 @@ var trapped_tiles = []
 
 var mine_wait_timer = 0
 
+var started_mining = false
+var stopped_mining = false
+
+var game_ended = false
+
 var start_pos
+
+var opponent
+
+var current_score = 0
+var displayed_score = 0
+
+
 
 func _ready():
 	start_pos = global_transform.origin
@@ -43,6 +55,7 @@ func _ready():
 	ui.get_node("TrapPhase/SetTraps").connect("pressed", self, "set_traps")
 	ui.get_node("TrapPhase/Revert").connect("pressed", self, "revert_traps")
 	ui.get_node("MinePhase/StopMining").connect("pressed", self, "stop_mining")
+	ui.get_node("Overlay/StopMining").connect("pressed", self, "stop_mining")
 		
 func _physics_process(delta):
 	if global_transform.origin.y < -20:
@@ -87,7 +100,14 @@ func _physics_process(delta):
 	movement = velocity + gravity_vec
 	
 	move_and_slide_with_snap(movement, snap, Vector3.UP)
-	
+
+var check_score_timer = 2
+func _process(delta):
+	if pending_miners.size() > 0:
+		check_score_timer -= delta
+		if check_score_timer < 0:
+			check_score_timer = 4
+			ethers.track_score()
 	
 func set_traps():
 	if trapped_tiles.size() == 3:
@@ -96,8 +116,7 @@ func set_traps():
 		var trap2 = trapped_tiles[1].tile_number
 		var trap3 = trapped_tiles[2].tile_number
 		
-		#turned off for now
-		#ethers.start_transaction("get_chain_public_key", [trap1,trap2,trap3])
+		ethers.start_transaction("get_chain_public_key", [trap1,trap2,trap3])
 		
 		trapped_tiles = []
 		ethers.get_node("Fadeout/Background").visible = true
@@ -127,11 +146,41 @@ func revert_traps():
 	trapped_tiles = []
 	ui.get_node("TrapPhase/TrapsCount").text = "Traps Set:\n0 / 3"
 	
-		
+
+var pending_miners = []
+func follow_up_mine(var tile):
+	pending_miners.push_back(tile)
+
+
+func handle_score(var new_score):
+	if current_score == 0:
+		current_score = new_score
+	else:
+		if new_score > current_score:
+			#survived
+			current_score = new_score
+			displayed_score += 1
+			ui.get_node("MinePhase/Score").text = String(displayed_score)
+			pending_miners[0].success()
+			pending_miners.erase(pending_miners[0])
+		elif new_score < current_score:
+			#ded
+			mine_phase = false
+			displayed_score = 0
+			pending_miners[0].trapped()
+			pending_miners = []
+			hit_trap()
+
+func hit_trap():
+	ui.get_node("MinePhase").visible = false
+	ui.get_node("Overlay").visible = true
+	ui.get_node("Overlay/StopMining").visible = true
+
 
 func stop_mining():
-	if mine_wait_timer == 0:
-		#send tx
+	if mine_wait_timer == 0 && stopped_mining == false:
+		stopped_mining = true
+		ethers.send_transaction("stop_mining")
 		mine_phase = false
 		ui.get_node("MinePhase").visible = false
 		ethers.get_node("Fadeout/Background").visible = true
