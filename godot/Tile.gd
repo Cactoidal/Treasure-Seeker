@@ -9,7 +9,7 @@ var activated = false
 var stay_visible = false
 
 func _ready():
-	pass # Replace with function body.
+	pass 
 
 var oscillate_timer = 0
 var oscillate_down = true
@@ -17,9 +17,9 @@ func _process(delta):
 	if oscillate_timer > 0:
 		oscillate_timer -= delta
 		if oscillate_down == true:
-			get_surface_material(0).albedo.a -= delta
+			get_active_material(0).albedo_color.a -= delta
 		else:
-			get_surface_material(0).albedo.a += delta
+			get_active_material(0).albedo_color.a += delta
 		if oscillate_timer < 0:
 			oscillate_timer = 1.2
 			if oscillate_down == true:
@@ -47,11 +47,11 @@ func try_mine():
 
 func success():
 	oscillate_timer = 0
-	get_surface_material(0).albedo = Color(0,1,0,0.75)
+	get_active_material(0).albedo_color = Color(0,1,0,0.75)
 
-func hit_trap():
+func trapped():
 	oscillate_timer = 0
-	get_surface_material(0).albedo = Color(1,0,0,0.75)
+	get_active_material(0).albedo_color = Color(1,0,0,0.75)
 
 
 func _on_Area_body_entered(body):
