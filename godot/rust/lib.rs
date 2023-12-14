@@ -78,7 +78,7 @@ impl Future for NewFuture {
 name = "Authorization token",
 version = "1",
 chain_id = 8009,
-verifying_contract = "0x4F8aE29A3afB656dB0D947dD78969Aec7E148161"
+verifying_contract = "0x5585448F711D648A89D2C61534C28266CA7eD889"
 )]
 struct Reencrypt {
     publicKey: [u8; 32]
@@ -148,6 +148,70 @@ let return_string: GodotString = calldata.to_string().into();
 return_string
 
 }
+
+#[method]
+fn get_mining_status(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: GodotString, rpc: GodotString, _player_address: GodotString) -> GodotString {
+
+let vec = &key.to_vec();
+
+let keyset = &vec[..]; 
+
+let prewallet : LocalWallet = LocalWallet::from_bytes(&keyset).unwrap();
+    
+let wallet: LocalWallet = prewallet.with_chain_id(chain_id);
+
+let user_address: Address = wallet.address();
+
+let provider = Provider::<Http>::try_from(rpc.to_string()).expect("could not instantiate HTTP Provider");
+
+let contract_address: Address = fhe_contract_address.to_string().parse().unwrap();
+
+let client = SignerMiddleware::new(provider, wallet);
+
+let contract = FHEABI::new(contract_address.clone(), Arc::new(client.clone()));
+
+let player_address: Address = _player_address.to_string().parse().unwrap();
+
+let calldata = contract.active_miner(player_address).calldata().unwrap();
+
+let return_string: GodotString = calldata.to_string().into();
+
+return_string
+
+}
+
+
+#[method]
+fn get_ending_status(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: GodotString, rpc: GodotString, _player_address: GodotString) -> GodotString {
+
+let vec = &key.to_vec();
+
+let keyset = &vec[..]; 
+
+let prewallet : LocalWallet = LocalWallet::from_bytes(&keyset).unwrap();
+    
+let wallet: LocalWallet = prewallet.with_chain_id(chain_id);
+
+let user_address: Address = wallet.address();
+
+let provider = Provider::<Http>::try_from(rpc.to_string()).expect("could not instantiate HTTP Provider");
+
+let contract_address: Address = fhe_contract_address.to_string().parse().unwrap();
+
+let client = SignerMiddleware::new(provider, wallet);
+
+let contract = FHEABI::new(contract_address.clone(), Arc::new(client.clone()));
+
+let player_address: Address = _player_address.to_string().parse().unwrap();
+
+let calldata = contract.ready_to_end(player_address).calldata().unwrap();
+
+let return_string: GodotString = calldata.to_string().into();
+
+return_string
+
+}
+
 
 
 #[method]
@@ -222,73 +286,6 @@ async fn initialize_player(key: PoolArray<u8>, chain_id: u64, fhe_contract_addre
     let contract = FHEABI::new(contract_address.clone(), Arc::new(client.clone()));
 
     let calldata = contract.initialize_point_balance().calldata().unwrap();
-
-    let tx = Eip1559TransactionRequest::new()
-        .from(user_address)
-        .to(contract_address) 
-        .value(0)
-        .gas(9000000)
-        .max_fee_per_gas(_gas_fee)
-        .max_priority_fee_per_gas(_gas_fee)
-        .chain_id(chain_id)
-        .nonce(_count)
-        .data(calldata);
-
-    let typed_tx: TypedTransaction = TypedTransaction::Eip1559(tx.clone());
-
-    let signature = wallet.sign_transaction(&typed_tx).await.unwrap();
-    let signed_data = TypedTransaction::rlp_signed(&typed_tx, &signature);
-
-    let node: TRef<Control> = unsafe { ui_node.assume_safe() };
-
-    unsafe {
-        node.call("set_signed_data", &[hex::encode(signed_data).to_variant()])
-    };
-
-    NewFuture(Ok(()))
-}
-
-
-#[method]
-#[tokio::main]
-async fn set_number(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: GodotString, rpc: GodotString, _gas_fee: u64, _count: u64, key_material: GodotString, _trap1: u8, ui_node: Ref<Control>) -> NewFuture {
-    
-    let vec = &key.to_vec();
-
-    let keyset = &vec[..]; 
-         
-    let prewallet : LocalWallet = LocalWallet::from_bytes(&keyset).unwrap();
-    
-    let wallet: LocalWallet = prewallet.with_chain_id(chain_id);
-    
-    let user_address = wallet.address();
-    
-    let provider = Provider::<Http>::try_from(rpc.to_string()).expect("could not instantiate HTTP Provider");
-    
-    let contract_address: Address = fhe_contract_address.to_string().parse().unwrap();
-    
-    let client = SignerMiddleware::new(provider, wallet.clone());
-    
-    let contract = FHEABI::new(contract_address.clone(), Arc::new(client.clone()));
-
-    let raw_hex: String = key_material.to_string();
-    
-    let decoded: Bytes = ethers::abi::AbiDecode::decode_hex(raw_hex).unwrap();
-
-    let d_vec: Vec<u8> = decoded.iter().map(|x| x.clone()).collect();
-    
-    let d_bytes = &d_vec[..]; 
-
-    let chain_public_key: CompactPublicKey = bincode::deserialize(d_bytes).unwrap();
-
-    let ser_trap1 = bincode::serialize(&_trap1).unwrap();
-    let trap1_bytes = &ser_trap1[..];
-    let fhe_trap1 = CompactFheUint8List::try_encrypt(trap1_bytes, &chain_public_key).unwrap();
-    let ser_fhe_trap1 = bincode::serialize(&fhe_trap1).unwrap();
-    let fhe_trap1_bytes: Bytes = ser_fhe_trap1.into();
-
-    //let calldata = contract.set_number(fhe_ethers_bytes).calldata().unwrap();
-    let calldata = contract.set_number(fhe_trap1_bytes).calldata().unwrap();
 
     let tx = Eip1559TransactionRequest::new()
         .from(user_address)
@@ -495,67 +492,8 @@ async fn stop_mining(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: Go
 
 
 #[method]
-fn current_game_score(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: GodotString, rpc: GodotString) -> GodotString {
-
-let vec = &key.to_vec();
-
-let keyset = &vec[..]; 
-
-let prewallet : LocalWallet = LocalWallet::from_bytes(&keyset).unwrap();
-    
-let wallet: LocalWallet = prewallet.with_chain_id(chain_id);
-
-let user_address = wallet.address();
-
-let provider = Provider::<Http>::try_from(rpc.to_string()).expect("could not instantiate HTTP Provider");
-
-let contract_address: Address = fhe_contract_address.to_string().parse().unwrap();
-
-let client = SignerMiddleware::new(provider, wallet);
-
-let contract = FHEABI::new(contract_address.clone(), Arc::new(client.clone()));
-
-let calldata = contract.current_game_score(user_address).calldata().unwrap();
-
-let return_string: GodotString = calldata.to_string().into();
-
-return_string
-
-}
-
-
-#[method]
-fn get_points_balance(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: GodotString, rpc: GodotString) -> GodotString {
-
-let vec = &key.to_vec();
-
-let keyset = &vec[..]; 
-
-let prewallet : LocalWallet = LocalWallet::from_bytes(&keyset).unwrap();
-    
-let wallet: LocalWallet = prewallet.with_chain_id(chain_id);
-
-let user_address = wallet.address();
-
-let provider = Provider::<Http>::try_from(rpc.to_string()).expect("could not instantiate HTTP Provider");
-
-let contract_address: Address = fhe_contract_address.to_string().parse().unwrap();
-
-let client = SignerMiddleware::new(provider, wallet);
-
-let contract = FHEABI::new(contract_address.clone(), Arc::new(client.clone()));
-
-let calldata = contract.get_points_balance(user_address).calldata().unwrap();
-
-let return_string: GodotString = calldata.to_string().into();
-
-return_string
-
-}
-
-#[method]
 #[tokio::main]
-async fn get_cryptobox_keypair(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: GodotString, rpc: GodotString, ui_node: Ref<Control>) -> NewFuture {
+async fn track_score(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: GodotString, rpc: GodotString, ui_node: Ref<Control>) -> NewFuture {
     let vec = &key.to_vec();
 
     let keyset = &vec[..]; 
@@ -587,7 +525,7 @@ async fn get_cryptobox_keypair(key: PoolArray<u8>, chain_id: u64, fhe_contract_a
    
     let signature: Bytes = wallet.sign_typed_data(&new_eip712).await.unwrap().to_vec().into();
 
-    let calldata = contract.test_decrypt(public_key, signature).calldata().unwrap();
+    let calldata = contract.track_score(public_key, signature).calldata().unwrap();
 
     let hex_public_key = hex::encode(&public_key);
     let hex_secret_key = hex::encode(&secret_key);
