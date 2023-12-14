@@ -12,7 +12,7 @@ var box_public_key
 var box_secret_key
 var box_key_calldata
 
-var test_contract = "0x5585448F711D648A89D2C61534C28266CA7eD889"
+var test_contract = "0xA0603F9C370E68c46B95E7E29B112Cb4D20C4914"
 
 var signed_data = ""
 
@@ -34,6 +34,7 @@ var waiting_for_opponent_text = load("res://WaitingForOpponent.png")
 var queueable = false
 var in_queue = false
 var check_for_opponent_timer = 0
+var opponent
 
 func _ready():
 	check_keystore()
@@ -43,7 +44,7 @@ func _ready():
 	$FaucetBackground/CopyAddress.connect("pressed", self, "copy_address")
 	$FaucetBackground/Confirm.connect("pressed", self, "open_faucet")
 	camera = get_parent().get_node("Camera")
-	
+	#start_transaction("initialize_player")
 
 	
 	
@@ -110,8 +111,7 @@ func _process(delta):
 		in_queue = true
 		get_parent().get_node("PressSpace").texture = waiting_for_opponent_text
 		
-		#turned off for now
-		#start_transaction("join_match")
+		start_transaction("join_match")
 		check_for_opponent_timer = 10
 	
 
@@ -155,6 +155,7 @@ func start_game():
 	move_child(new_game, 0)
 	player = new_game.get_node("Player")
 	player.ethers = self
+	player.opponent = opponent
 	new_game.get_node("Camera").make_current()
 	get_parent().get_node("Moon").visible = false
 	get_parent().get_node("Title").visible = false
@@ -164,6 +165,7 @@ func start_game():
 var check_mining_timer = 0
 func wait_for_mining():
 	track_score()
+	player.ui.get_node("TrapPhase").visible = false
 	check_mining_timer = 4
 
 var check_ending_timer = 0
@@ -254,9 +256,9 @@ func check_for_opponent_attempted(result, response_code, headers, body):
 
 	if response_code == 200:
 		print(get_result)
-		var opponent = Fhe.decode_address(get_result["result"])
-		if opponent != "0x0000000000000000000000000000000000000000":
-			player.opponent = opponent
+		var _opponent = Fhe.decode_address(get_result["result"])
+		if _opponent != "0x0000000000000000000000000000000000000000":
+			opponent = _opponent
 			check_for_opponent_timer = 0
 			fade("start_game")
 			
@@ -292,7 +294,7 @@ func check_mining_status_attempted(result, response_code, headers, body):
 	if response_code == 200:
 		print(get_result)
 		var status = Fhe.decode_bool(get_result["result"])
-		if status == true:
+		if status == "true":
 			if player.started_mining == false:
 				player.started_mining = true
 			else:
@@ -300,14 +302,14 @@ func check_mining_status_attempted(result, response_code, headers, body):
 				player.start_mining()
 				fadein = true
 		
-	http_request_delete_tx_write.queue_free()
+	
 
 
 func check_ending_status(var player_address):
 	var http_request = HTTPRequest.new()
 	$HTTP.add_child(http_request)
 	http_request_delete_tx_write = http_request
-	http_request.connect("request_completed", self, "check_mining_status_attempted")
+	http_request.connect("request_completed", self, "check_ending_status_attempted")
 	
 	var file = File.new()
 	file.open("user://keystore", File.READ)
@@ -331,7 +333,7 @@ func check_ending_status_attempted(result, response_code, headers, body):
 	if response_code == 200:
 		print(get_result)
 		var status = Fhe.decode_bool(get_result["result"])
-		if status == true:
+		if status == "false":
 			if player.game_ended == false:
 				player.game_ended = true
 			else:
@@ -456,15 +458,14 @@ func get_chain_public_key_attempted(result, response_code, headers, body):
 		var trap2 = tx_parameter[1]
 		var trap3 = tx_parameter[2]
 		
-		
-		#Fhe.set_number(content, chain_id, test_contract, zama_rpc, gas_price, tx_count, chain_public_key, trap1, self)
 		Fhe.set_traps(content, chain_id, test_contract, zama_rpc, gas_price, tx_count, chain_public_key, trap1, trap2, trap3, self)
+		
 	
 	else:
 		print("no")
 		pass
 		
-	http_request_delete_tx_write.queue_free()
+	
 
 
 func track_score():
@@ -523,7 +524,7 @@ func set_box_keys(var _public_key, var _secret_key, var _calldata):
 func set_signed_data(var signature):
 	
 	var signed_data = "".join(["0x", signature])
-	print(signed_data)
+	#print(signed_data)
 	
 	var http_request = HTTPRequest.new()
 	$HTTP.add_child(http_request)
