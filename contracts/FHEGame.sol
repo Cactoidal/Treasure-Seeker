@@ -8,7 +8,6 @@ contract FHEGame is EIP712WithModifier {
 
     mapping (address => bool) public playerInitialized;
     mapping (address => euint32) public playerPoints;
-    mapping (address => uint) public playerTokens;
 
     address[2] matchmaker;
     mapping (address => uint) public queueStartTime;
@@ -35,22 +34,22 @@ contract FHEGame is EIP712WithModifier {
         test_decrypt_value = TFHE.randEuint8();
     }
 
-    // Point balance will always start at 0
-    function initializePointBalance() public {
-        require(playerInitialized[msg.sender] == false);
-        playerInitialized[msg.sender] = true;
-        playerPoints[msg.sender] = TFHE.randEuint32();
-        playerPoints[msg.sender] = TFHE.sub(playerPoints[msg.sender],  TFHE.decrypt(playerPoints[msg.sender]));
-
-        // For Testing   //
-        playerPoints[testOpponent] = TFHE.randEuint32();
-        playerPoints[testOpponent] = TFHE.sub(playerPoints[testOpponent],  TFHE.decrypt(playerPoints[testOpponent]));
-    }
 
     function joinMatch() public {
-        require(playerInitialized[msg.sender] == true);
         require(inGame[msg.sender] == false);
         require(waitingForMatch[msg.sender] == false);
+
+        
+        if (playerInitialized[msg.sender] == false) {
+            playerInitialized[msg.sender] = true;
+            playerPoints[msg.sender] = TFHE.randEuint32();
+            playerPoints[msg.sender] = TFHE.sub(playerPoints[msg.sender],  playerPoints[msg.sender]);
+
+            // For Testing   //
+            playerPoints[testOpponent] = TFHE.randEuint32();
+            playerPoints[testOpponent] = TFHE.sub(playerPoints[testOpponent],  playerPoints[testOpponent]);
+            ///////////
+        }
 
         //  For Testing   //
         matchmaker[0] = testOpponent;
@@ -121,6 +120,13 @@ contract FHEGame is EIP712WithModifier {
         waitingForMatch[msg.sender] = false;
     }
 
+
+    euint8 public secret_value;
+    function test_set_number(bytes calldata _secret_value) public {
+        euint8 number = TFHE.asEuint8(_secret_value);
+        secret_value = number;
+    }
+
     // Choose 3 spots on the board to trap
     // A modder could try to trap outside the boundaries of the board (0-24), or stack traps on the same space,
     // but these OoB traps would have no effect on the game, aside from reducing the number of traps in play
@@ -141,6 +147,7 @@ contract FHEGame is EIP712WithModifier {
         hasSetTraps[opponent] = true;
         activeMiner[opponent] = true;
         lastAction[opponent] = block.number;
+        ///////////
     }
 
 
@@ -185,7 +192,7 @@ contract FHEGame is EIP712WithModifier {
         // For Testing
         activeMiner[opponent] = false;
         readyToEnd[opponent] = true;
-        ////////
+        ///////////
 
         if (readyToEnd[opponent] == true) {
 
@@ -195,10 +202,10 @@ contract FHEGame is EIP712WithModifier {
             euint8 opponentCurrentScore = currentResources[opponent];
 
             ebool playerScoreAboveZero = TFHE.gt(playerCurrentScore, playerBaseScore);
-            euint8 playerScore = TFHE.cmux(playerScoreAboveZero, TFHE.sub(playerCurrentScore, playerBaseScore), TFHE.sub(playerBaseScore, TFHE.decrypt(playerBaseScore)));
+            euint8 playerScore = TFHE.cmux(playerScoreAboveZero, TFHE.sub(playerCurrentScore, playerBaseScore), TFHE.sub(playerBaseScore, playerBaseScore));
 
             ebool opponentScoreAboveZero = TFHE.gt(opponentCurrentScore, opponentBaseScore);
-            euint8 opponentScore = TFHE.cmux(opponentScoreAboveZero, TFHE.sub(opponentCurrentScore, opponentBaseScore), TFHE.sub(opponentBaseScore, TFHE.decrypt(opponentBaseScore)));
+            euint8 opponentScore = TFHE.cmux(opponentScoreAboveZero, TFHE.sub(opponentCurrentScore, opponentBaseScore), TFHE.sub(opponentBaseScore, opponentBaseScore));
 
             ebool playerWon = TFHE.gt(playerScore, opponentScore);
             playerPoints[msg.sender] = TFHE.cmux(playerWon, TFHE.add(playerPoints[msg.sender], playerScore), playerPoints[msg.sender]);
@@ -229,7 +236,7 @@ contract FHEGame is EIP712WithModifier {
         require (block.number >= lastAction[msg.sender] + 20);
 
         ebool playerScoreAboveZero = TFHE.gt(currentResources[msg.sender], baseResources[msg.sender]);
-        euint8 playerScore = TFHE.cmux(playerScoreAboveZero, TFHE.sub(currentResources[msg.sender], baseResources[msg.sender]), TFHE.sub(baseResources[msg.sender], TFHE.decrypt(baseResources[msg.sender])));
+        euint8 playerScore = TFHE.cmux(playerScoreAboveZero, TFHE.sub(currentResources[msg.sender], baseResources[msg.sender]), TFHE.sub(baseResources[msg.sender], baseResources[msg.sender]));
         playerPoints[msg.sender] = TFHE.add(playerPoints[msg.sender], playerScore);
 
         inGame[msg.sender] = false;
