@@ -90,7 +90,7 @@ As a side note, sometime in the next few months I plan to make the switch from e
 
 My games typically center around two scripts: the "main script" that instantiates the game session, and which contains all of the transaction logic, and the "game script" which takes player inputs and displays visual effects.
 
-I'm wondering if there is a way to simplify or streamline the relationship between these scripts, since right now the end product can end up being a bit convoluted, with the scripts referring to one another back and forth.
+I'm wondering if there is a way to simplify or streamline the relationship between these scripts, since right now the end product can end up somewhat convoluted, with the scripts referring to one another back and forth.
 
 I also have quite a bit of repetitive code, both in gdscript and in Rust, that I'm hoping I can cut down, to make the system easier to audit and replicate.
 
