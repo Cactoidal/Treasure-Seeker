@@ -32,11 +32,9 @@ The two "actual scores" are then compared.  Whoever's score is greater is the wi
 
 <img width="1009" alt="1FHEGame" src="https://github.com/Cactoidal/ZAMAfhEVMGame/assets/115384394/f123b91a-66bb-48cf-abfd-70b12105455e">
 
-Basic UI is put together.  I've realized that the "player point balance" also needs to be initialized, which I attempted to accomplish by generating a random euint32, then subtracting it from itself.  This did not work.
+Basic UI is put together.  I've realized that the "player point balance" also needs to be initialized, which I accomplished by generating a random euint32, then subtracting it from itself.
 
-What _did_ work was using the "decrypt" function on the subtractor, then subtracting, but this is less than desirable because the use of "decrypt" is discouraged except in very specific cases.
-
-However, time is limited, so if I can, I'll revisit the code later to try and remove the decrypts.  For now, everything seems to be working - the player can join a game, set traps, mine a space to increase their score, and end the game, earning points if they win.  I'll create a nicer UI tomorrow.
+Everything seems to be working - the player can join a game, set traps, mine a space to increase their score, and end the game, earning points if they win.  I'll create a nicer UI tomorrow.
 
 ## Day 3
 
