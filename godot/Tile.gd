@@ -11,8 +11,21 @@ var stay_visible = false
 func _ready():
 	pass # Replace with function body.
 
-#func _process(delta):
-#	pass
+var oscillate_timer = 0
+var oscillate_down = true
+func _process(delta):
+	if oscillate_timer > 0:
+		oscillate_timer -= delta
+		if oscillate_down == true:
+			get_surface_material(0).albedo.a -= delta
+		else:
+			get_surface_material(0).albedo.a += delta
+		if oscillate_timer < 0:
+			oscillate_timer = 1.2
+			if oscillate_down == true:
+				oscillate_down = false
+			else:
+				oscillate_down = true
 
 
 func set_trap():
@@ -29,6 +42,16 @@ func try_mine():
 		player.ui.get_node("MinePhase/MineTimer").visible = true
 		player.mine_wait_timer = 9
 		player.ethers.start_transaction("try_mine", tile_number)
+		player.follow_up_mine(self)
+		oscillate_timer = 1.2
+
+func success():
+	oscillate_timer = 0
+	get_surface_material(0).albedo = Color(0,1,0,0.75)
+
+func hit_trap():
+	oscillate_timer = 0
+	get_surface_material(0).albedo = Color(1,0,0,0.75)
 
 
 func _on_Area_body_entered(body):
