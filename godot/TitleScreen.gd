@@ -12,7 +12,7 @@ var box_public_key
 var box_secret_key
 var box_key_calldata
 
-var test_contract = "0xA0603F9C370E68c46B95E7E29B112Cb4D20C4914"
+var test_contract = "0x3e1fE0a71765411A638E096bC84a62498277F63e"
 
 var signed_data = ""
 
@@ -36,15 +36,27 @@ var in_queue = false
 var check_for_opponent_timer = 0
 var opponent
 
+var debug_menu
+var debug_menu_open = false
+
 func _ready():
+	debug_menu = get_parent().get_node("DebugMenu")
+	camera = get_parent().get_node("Camera")
 	check_keystore()
 	get_address()
 	get_balance()
 	$GetZAMA.connect("pressed", self, "open_faucet_confirm")
 	$FaucetBackground/CopyAddress.connect("pressed", self, "copy_address")
 	$FaucetBackground/Confirm.connect("pressed", self, "open_faucet")
-	camera = get_parent().get_node("Camera")
-	#start_transaction("initialize_player")
+	
+	
+	debug_menu.get_node("Copy").connect("pressed", self, "copy_address")
+	debug_menu.get_node("Close").connect("pressed", self, "close_debug_menu")
+	debug_menu.get_node("Faucet").connect("pressed", self, "debug_open_faucet")
+	debug_menu.get_node("ExitQueue").connect("pressed", self, "start_transaction", ["debug_exit_queue"])
+	debug_menu.get_node("EndGame").connect("pressed", self, "start_transaction", ["stop_mining"])
+	debug_menu.get_node("ForceEnd").connect("pressed", self, "start_transaction", ["debug_force_end"])
+	
 
 	
 	
@@ -54,7 +66,6 @@ var fadeout = false
 var fadepause = 0
 var fadein = false
 var exiting = false
-var need_to_initialize = false
 
 var check_opponent_trap_timer = false
 var check_opponent_end_game_timer = false
@@ -114,6 +125,14 @@ func _process(delta):
 		start_transaction("join_match")
 		check_for_opponent_timer = 10
 	
+	if Input.is_action_just_pressed("debug"):
+		if debug_menu_open == false:
+			debug_menu_open = true
+			get_parent().get_node("DebugMenu").visible = true
+		else:
+			debug_menu_open = false
+			get_parent().get_node("DebugMenu").visible = false
+	
 
 func check_keystore():
 	var file = File.new()
@@ -130,6 +149,7 @@ func get_address():
 	var content = file.get_buffer(32)
 	user_address = Fhe.get_address(content)
 	$FaucetBackground/Address.text = user_address
+	debug_menu.get_node("Address").text = user_address
 	file.close()
 
 func open_faucet_confirm():
@@ -211,18 +231,16 @@ func get_balance_attempted(result, response_code, headers, body):
 	if response_code == 200:
 		if get_result["result"].hex_to_int() > 0:
 			queueable = true
-			camera.press_space_timer = 5
+			camera.press_space_timer = 3.3
 			$GetZAMA.visible = false
 			$FaucetBackground.visible = false
 			gas_balance_check_timer = 0
-			if need_to_initialize == true:
-				start_transaction("initialize_player")
 		else:
-			need_to_initialize = true
 			$GetZAMA.visible = true
 			
 		var balance = String(get_result["result"].hex_to_int())
 		user_balance = balance
+		debug_menu.get_node("Balance").text = balance
 	else:
 		pass
 	http_request_delete_balance.queue_free()
@@ -339,8 +357,7 @@ func check_ending_status_attempted(result, response_code, headers, body):
 			else:
 				check_ending_timer = 0
 				player.conclude_game()
-		
-	http_request_delete_tx_write.queue_free()
+
 
 func get_tx_count():
 	var http_request = HTTPRequest.new()
@@ -396,16 +413,6 @@ func estimate_gas_attempted(result, response_code, headers, body):
 	http_request_delete_gas.queue_free()
 	call(tx_function_name)
 	
-	
-	
-
-	
-func initialize_player():
-	var file = File.new()
-	file.open("user://keystore", File.READ)
-	var content = file.get_buffer(32)
-	file.close()
-	Fhe.initialize_player(content, chain_id, test_contract, zama_rpc, gas_price, tx_count, self)
 	
 func join_match():
 	var file = File.new()
@@ -552,3 +559,30 @@ func send_transaction_attempted(result, response_code, headers, body):
 		pass
 	
 	http_request_delete_tx_write.queue_free()
+
+
+
+
+
+#   DEBUG FUNCTIONS   #
+
+func close_debug_menu():
+	debug_menu_open = false
+	get_parent().get_node("DebugMenu").visible = false
+
+func debug_open_faucet():
+	OS.shell_open("https://faucet.zama.ai")
+
+func debug_exit_queue():
+	var file = File.new()
+	file.open("user://keystore", File.READ)
+	var content = file.get_buffer(32)
+	file.close()
+	Fhe.exit_queue(content, chain_id, test_contract, zama_rpc, gas_price, tx_count, self)
+
+func debug_force_end():
+	var file = File.new()
+	file.open("user://keystore", File.READ)
+	var content = file.get_buffer(32)
+	file.close()
+	Fhe.force_end(content, chain_id, test_contract, zama_rpc, gas_price, tx_count, self)
