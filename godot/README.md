@@ -78,6 +78,22 @@ The whole shebang.  I'm liking the minimal style, so while there need to be some
 
 After some assistance from ChatGPT and quite a bit of trial and error, I've now implemented the EIP712 signing standard expected by the contract.  This allows the player to generate a crypto_box public/private keypair using libsodium-sys, sign the public key, and pass it to the contract.  Next up: making the game ready for competitive play, now that all the pieces have been assembled.
 
+## Day 6
+
+Happy to report that the game is now fully hooked up to the smart contract and can be played start-to-finish.  It uses the chain public key to homomorphically encrypt the trap values, and it uses the cryptobox keypair and EIP712 standard to request and reencrypt the game session score, so it can know whether you hit a trap while mining.
+
+Just a bit more needs to be done.  There are some graphical problems to address, and the player also needs to know whether they won.  This will be accomplished by checking the player's "point balance" before and after the game session; if it went up, then they won the game.
+
+Once these pieces are complete, I can remove the test opponent and try some live 1v1s.  
+
+As a side note, sometime in the next few months I plan to make the switch from ethers-rs to Alloy, and from Godot 3.5 to Godot 4.2.  During that time I'd like to think carefully about my coding patterns.
+
+My games typically center around two scripts: the "main script" that instantiates the game session, and which contains all of the transaction logic, and the "game script" which takes player inputs and displays visual effects.
+
+I'm wondering if there is a way to simplify or streamline the relationship between these scripts, since right now the end product can end up being a bit convoluted, with the scripts referring to one another back and forth.
+
+I also have quite a bit of repetitive code, both in gdscript and in Rust, that I'm hoping I can cut down, to make the system easier to audit and replicate.
+
 
 
 
