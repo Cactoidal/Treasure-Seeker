@@ -108,6 +108,8 @@ func _process(delta):
 		if check_score_timer < 0:
 			check_score_timer = 4
 			ethers.track_score()
+	else:
+		check_score_timer = 4
 	
 func set_traps():
 	if trapped_tiles.size() == 3:
@@ -117,7 +119,7 @@ func set_traps():
 		var trap3 = trapped_tiles[2].tile_number
 		
 		ethers.start_transaction("get_chain_public_key", [trap1,trap2,trap3])
-		
+		print([trap1,trap2,trap3])
 		trapped_tiles = []
 		ethers.get_node("Fadeout/Background").visible = true
 		ethers.get_node("Fadeout/Background/Waiting").visible = true
@@ -150,8 +152,13 @@ var pending_miners = []
 func follow_up_mine(var tile):
 	pending_miners.push_back(tile)
 
-
+var mine_id = 1
 func handle_score(var new_score):
+	print("Turn " + String(mine_id) + "\n")
+	mine_id += 1
+	print("Current score: " + String(current_score) + "\n")
+	print("New score: " + String(new_score) + "\n")
+	
 	if current_score == 0:
 		current_score = new_score
 	else:
@@ -159,18 +166,21 @@ func handle_score(var new_score):
 			#survived
 			current_score = new_score
 			displayed_score += 1
-			ui.get_node("MinePhase/Score").text = String(displayed_score)
-			pending_miners[0].success()
-			pending_miners.erase(pending_miners[0])
+			ui.get_node("MinePhase/Score").text = "Your score:\n" + String(displayed_score)
+			if pending_miners.size() > 0:
+				pending_miners[0].success()
+				pending_miners.erase(pending_miners[0])
 		elif new_score < current_score:
 			#ded
 			mine_phase = false
 			displayed_score = 0
-			pending_miners[0].trapped()
+			for tile in tiles.get_children():
+				tile.trapped()
 			pending_miners = []
 			hit_trap()
 
 func hit_trap():
+	mine_wait_timer = 0
 	ui.get_node("MinePhase").visible = false
 	ui.get_node("Overlay").visible = true
 	ui.get_node("Overlay/StopMining").visible = true
