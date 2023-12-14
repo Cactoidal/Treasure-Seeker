@@ -1,8 +1,30 @@
 [
 	{
 		"inputs": [],
-		"stateMutability": "nonpayable",
-		"type": "constructor"
+		"name": "ECDSAInvalidSignature",
+		"type": "error"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "length",
+				"type": "uint256"
+			}
+		],
+		"name": "ECDSAInvalidSignatureLength",
+		"type": "error"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "s",
+				"type": "bytes32"
+			}
+		],
+		"name": "ECDSAInvalidSignatureS",
+		"type": "error"
 	},
 	{
 		"inputs": [],
@@ -28,44 +50,94 @@
 	},
 	{
 		"inputs": [],
-		"name": "checkBefore",
-		"outputs": [
-			{
-				"internalType": "uint8",
-				"name": "",
-				"type": "uint8"
-			}
-		],
-		"stateMutability": "view",
+		"name": "exitQueue",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
 		"inputs": [],
-		"name": "checkUnderflow",
-		"outputs": [
-			{
-				"internalType": "uint8",
-				"name": "",
-				"type": "uint8"
-			}
-		],
-		"stateMutability": "view",
+		"name": "forceEndGame",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "initializePointBalance",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "joinMatch",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
 		"inputs": [
 			{
+				"internalType": "bytes",
+				"name": "_trap1",
+				"type": "bytes"
+			},
+			{
+				"internalType": "bytes",
+				"name": "_trap2",
+				"type": "bytes"
+			},
+			{
+				"internalType": "bytes",
+				"name": "_trap3",
+				"type": "bytes"
+			}
+		],
+		"name": "setTraps",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "stopMining",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint8",
+				"name": "location",
+				"type": "uint8"
+			}
+		],
+		"name": "tryMine",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "address",
-				"name": "player",
+				"name": "",
 				"type": "address"
 			}
 		],
-		"name": "currentGameScore",
+		"name": "activeMiner",
 		"outputs": [
 			{
-				"internalType": "uint8",
+				"internalType": "bool",
 				"name": "",
-				"type": "uint8"
+				"type": "bool"
 			}
 		],
 		"stateMutability": "view",
@@ -134,26 +206,43 @@
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "forceEndGame",
-		"outputs": [],
-		"stateMutability": "nonpayable",
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "publicKey",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "bytes",
+				"name": "signature",
+				"type": "bytes"
+			}
+		],
+		"name": "getPointsBalance",
+		"outputs": [
+			{
+				"internalType": "bytes",
+				"name": "",
+				"type": "bytes"
+			}
+		],
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "player",
+				"name": "",
 				"type": "address"
 			}
 		],
-		"name": "getPointsBalance",
+		"name": "hasSetTraps",
 		"outputs": [
 			{
-				"internalType": "uint32",
+				"internalType": "bool",
 				"name": "",
-				"type": "uint32"
+				"type": "bool"
 			}
 		],
 		"stateMutability": "view",
@@ -179,17 +268,41 @@
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "initializePointBalance",
-		"outputs": [],
-		"stateMutability": "nonpayable",
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "lastAction",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "joinMatch",
-		"outputs": [],
-		"stateMutability": "nonpayable",
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "playerInitialized",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -257,63 +370,7 @@
 				"type": "address"
 			}
 		],
-		"name": "secretNumber",
-		"outputs": [
-			{
-				"internalType": "euint8",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes",
-				"name": "_number",
-				"type": "bytes"
-			}
-		],
-		"name": "setNumber",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes",
-				"name": "_trap1",
-				"type": "bytes"
-			},
-			{
-				"internalType": "bytes",
-				"name": "_trap2",
-				"type": "bytes"
-			},
-			{
-				"internalType": "bytes",
-				"name": "_trap3",
-				"type": "bytes"
-			}
-		],
-		"name": "setTraps",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "stopMining",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "success",
+		"name": "readyToEnd",
 		"outputs": [
 			{
 				"internalType": "bool",
@@ -327,31 +384,59 @@
 	{
 		"inputs": [
 			{
-				"internalType": "uint8",
-				"name": "location",
-				"type": "uint8"
+				"internalType": "bytes32",
+				"name": "publicKey",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "bytes",
+				"name": "signature",
+				"type": "bytes"
 			}
 		],
-		"name": "tryMine",
-		"outputs": [],
-		"stateMutability": "nonpayable",
+		"name": "test_decrypt",
+		"outputs": [
+			{
+				"internalType": "bytes",
+				"name": "",
+				"type": "bytes"
+			}
+		],
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
 		"inputs": [],
-		"name": "tryUnderflow",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "underflowChecker",
+		"name": "test_decrypt_value",
 		"outputs": [
 			{
 				"internalType": "euint8",
 				"name": "",
 				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes32",
+				"name": "publicKey",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "bytes",
+				"name": "signature",
+				"type": "bytes"
+			}
+		],
+		"name": "trackScore",
+		"outputs": [
+			{
+				"internalType": "bytes",
+				"name": "",
+				"type": "bytes"
 			}
 		],
 		"stateMutability": "view",
