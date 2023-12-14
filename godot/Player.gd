@@ -126,7 +126,6 @@ func set_traps():
 func start_mining():
 	ethers.get_node("Fadeout/Background/Waiting").visible = false
 	ethers.get_node("Fadeout/Background").visible = false
-	ui.get_node("TrapPhase").visible = false
 	mine_phase = true
 	ui.get_node("MinePhase").visible = true
 	for tile in tiles.get_children():
@@ -180,8 +179,10 @@ func hit_trap():
 func stop_mining():
 	if mine_wait_timer == 0 && stopped_mining == false:
 		stopped_mining = true
-		ethers.send_transaction("stop_mining")
+		ethers.start_transaction("stop_mining")
 		mine_phase = false
+		ui.get_node("Overlay").visible = false
+		ui.get_node("Overlay/StopMining").visible = false
 		ui.get_node("MinePhase").visible = false
 		ethers.get_node("Fadeout/Background").visible = true
 		ethers.get_node("Fadeout/Background/Waiting").visible = true
@@ -189,6 +190,7 @@ func stop_mining():
 
 
 func conclude_game():
+	print("hello")
 	ethers.get_node("Fadeout/Background/Waiting").visible = false
 	ethers.get_node("Fadeout/Background").visible = false
 	ethers.camera.make_current()
