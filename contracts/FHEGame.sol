@@ -6,12 +6,9 @@ import "fhevm/abstracts/EIP712WithModifier.sol";
 
 contract FHEGame is EIP712WithModifier {
 
-    mapping (address => euint8) public secretNumber;
-    bool public success;
-    mapping (address => bool) playerInitialized;
+    mapping (address => bool) public playerInitialized;
     mapping (address => euint32) public playerPoints;
     mapping (address => uint) public playerTokens;
-
 
     address[2] matchmaker;
     mapping (address => uint) public queueStartTime;
@@ -21,10 +18,10 @@ contract FHEGame is EIP712WithModifier {
     mapping (address => euint8) baseResources;
     mapping (address => euint8) currentResources;
     mapping (address => euint8[3]) traps;
-    mapping (address => bool) hasSetTraps;
-    mapping (address => bool) activeMiner;
-    mapping (address => bool) readyToEnd;
-    mapping (address => uint) lastAction;
+    mapping (address => bool) public hasSetTraps;
+    mapping (address => bool) public activeMiner;
+    mapping (address => bool) public readyToEnd;
+    mapping (address => uint) public lastAction;
 
     uint gameId = 1;
     mapping (address => uint) gameSession;
@@ -35,6 +32,7 @@ contract FHEGame is EIP712WithModifier {
     address testOpponent = 0x2Bd1324482B9036708a7659A3FCe20DfaDD455ba;
 
     constructor() EIP712WithModifier("Authorization token", "1") {
+        test_decrypt_value = TFHE.randEuint8();
     }
 
     // Point balance will always start at 0
@@ -115,6 +113,12 @@ contract FHEGame is EIP712WithModifier {
             matchmaker[1] = address(0x0);
         }
 
+    }
+
+    function exitQueue() public {
+        require(waitingForMatch[msg.sender] == true);
+        matchmaker[0] = address(0x0);
+        waitingForMatch[msg.sender] = false;
     }
 
     // Choose 3 spots on the board to trap
@@ -239,31 +243,29 @@ contract FHEGame is EIP712WithModifier {
 
 
     }
-
-
-    // For now, using decrypt in testing
-    // the real thing must use msg.sender and EIP-712
-
-    function currentGameScore(address player) public view returns (uint8) {
-        euint8 playerBaseScore = baseResources[player];
-        euint8 playerCurrentScore = currentResources[player];
-
-        ebool playerScoreAboveZero = TFHE.gt(playerCurrentScore, playerBaseScore);
-        euint8 playerScore = TFHE.cmux(playerScoreAboveZero, TFHE.sub(playerCurrentScore, playerBaseScore), TFHE.sub(playerBaseScore, TFHE.decrypt(playerBaseScore)));
-        return TFHE.decrypt(playerScore);
-    }
+  
+    // To observe changes during gameplay, the game needs to know the "current score" over time.
+    // This raw value will not be visible to the player, and instead its 
+    // increases/decreases will be tracked by Godot
+    function trackScore(
+        bytes32 publicKey,
+        bytes calldata signature
+        ) public view onlySignedPublicKey(publicKey, signature) returns (bytes memory) {
+            return TFHE.reencrypt(currentResources[msg.sender], publicKey, 0);
+        }
     
-    function getPointsBalance(address player) public view returns (uint32) {
-        return TFHE.decrypt(playerPoints[player]);
-    }
 
 
-
-
-    /*
-        Turned off for testing
+    function getPointsBalance(
+        bytes32 publicKey,
+        bytes calldata signature
+        ) public view onlySignedPublicKey(publicKey, signature) returns (bytes memory) {
+            return TFHE.reencrypt(playerPoints[msg.sender], publicKey, 0);
+        }
+        
 
     // Retrieve your current score using EIP712 key exchange
+    /*
     function currentScore(
         bytes32 publicKey,
         bytes calldata signature
@@ -275,32 +277,24 @@ contract FHEGame is EIP712WithModifier {
             euint8 playerScore = TFHE.cmux(playerScoreAboveZero, TFHE.sub(playerCurrentScore, playerBaseScore), TFHE.sub(playerBaseScore, playerBaseScore));
             return TFHE.reencrypt(playerScore, publicKey, 0);
         }
-*/
+    */
 
 
     // Debug functions
-    function setNumber(bytes calldata _number) public {
-        euint8 number = TFHE.asEuint8(_number);
-        secretNumber[msg.sender] = number;
-        success = true;
-    }
-
-
-    euint8 public underflowChecker;
-    
-    function tryUnderflow() public {
-        underflowChecker = TFHE.randEuint8();
-    }
-
-    function checkBefore() public view returns (uint8) {
-        return TFHE.decrypt(underflowChecker);
-    }
-
-    function checkUnderflow() public view returns (uint8) {
-        euint8 test = TFHE.sub(underflowChecker, 255);
-        return TFHE.decrypt(test);
-    }
-    
-
+   
+    euint8 public test_decrypt_value;
+    function test_decrypt(
+        bytes32 publicKey,
+        bytes calldata signature
+        ) public view onlySignedPublicKey(publicKey, signature) returns (bytes memory) {
+            return TFHE.reencrypt(test_decrypt_value, publicKey, 0);
+        }
 
   }
+
+
+
+
+
+
+
