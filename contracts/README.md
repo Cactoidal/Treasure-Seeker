@@ -11,3 +11,7 @@ GODOT
 [TitleScreen.gd](https://github.com/Cactoidal/Treasure-Seeker/blob/main/godot/TitleScreen.gd) - main hub of the game, contains all eth_call and eth_sendRawTransaction functions, handles queueing and initializing game sessions
 
 [Player.gd](https://github.com/Cactoidal/Treasure-Seeker/blob/main/godot/Player.gd) - controller of a game session, takes player inputs and renders effects of transactions
+
+RELEASE
+
+[Treasure Seeker Demo](https://github.com/Cactoidal/Treasure-Seeker/releases/tag/v0.1.0-alpha) - for MacOSX and Linux/X11
