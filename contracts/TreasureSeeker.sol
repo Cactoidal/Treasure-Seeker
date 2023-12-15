@@ -131,12 +131,14 @@ contract TreasureSeeker is EIP712WithModifier {
     // Choose a spot to mine.  If the mine has a trap, you will lose 33 points.  Otherwise, you gain 1 point.
     // Must mine within the boundaries of the board (0-24)
     // Can't mine in the same spot twice
-    function tryMine2(euint8 location) public {
+    function tryMine2(bytes calldata tryLocation) public {
         address opponent = currentOpponent[msg.sender];
         euint8 resources = currentResources[msg.sender];
 
         require(activeMiner[msg.sender] == true);
         require(hasSetTraps[opponent] == true);
+
+        euint8 location = TFHE.asEuint8(tryLocation);
 
         // Check that the tile is not greater than 24
         ebool outOfBounds = TFHE.gt(location, 24);
