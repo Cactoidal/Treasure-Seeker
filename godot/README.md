@@ -104,7 +104,7 @@ Regardless, there is now a [public release available for MacOSX and Linux/X11](h
 
 I've also created a [short demo video](https://www.youtube.com/watch?v=wdNZbRqhCMY) showing the gameplay, and explaining the contract logic.
 
-And that brings this first experiment with the fhEVM to a close.  As always, thanks for reading, hope you enjoyed.
+And that brings this first experiment with the fhEVM to a close.  As always, thanks for reading.
 
 
 
