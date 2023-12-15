@@ -1,6 +1,6 @@
 # Treasure Seeker
 
-[Public Demo available for MacOSX and Linux/X11](https://github.com/Cactoidal/Treasure-Seeker/releases/tag/v0.1.0-alpha)
+[Public Demo available for MacOSX and Linux/X11](https://github.com/Cactoidal/Treasure-Seeker/releases/tag/v0.1.0-alpha)!
 
 [Devblog](https://github.com/Cactoidal/Treasure-Seeker/blob/main/godot/README.md)
 
