@@ -92,6 +92,20 @@ I'm wondering if there is a way to simplify or streamline the relationship betwe
 
 I also have quite a bit of repetitive code, both in gdscript and in Rust, that I'm hoping I can cut down, to make the system easier to audit and replicate.
 
+## Day 7
+
+After some live 1v1 playtesting, I've found a few bugs that could be RPC related.  On rare occasions, something happens to the reencrypted value during transit, which causes Godot to incorrectly report the incoming score as a 0.  Since the game is just checking whether the incoming score is lower than the current recorded score, this tricks the game into reporting that the tile was trapped.
+
+To get around this, for now I've just programmed the game to ignore incoming scores of 0.  My hypothesis is that this may have to do with how I've hardcoded the RPC request id numbers, but I'm not quite sure, and the error is difficult to replicate.
+
+More commonly, transactions get dropped entirely, which can make the game hang up during queueing.  Running the game with a local RPC would probably solve these problems.
+
+Regardless, there is now a [public release available for MacOSX and Linux/X11](https://github.com/Cactoidal/Treasure-Seeker/releases/tag/v0.1.0-alpha)!  If you'd like to try it, you should definitely play with a friend, otherwise you will simply sit in the queue.
+
+I've also created a [short demo video](https://www.youtube.com/watch?v=wdNZbRqhCMY) showing the gameplay, and explaining the contract logic.
+
+And that brings this first experiment with the fhEVM to a close.  As always, thanks for reading, hope you enjoyed.
+
 
 
 
