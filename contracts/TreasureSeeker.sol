@@ -29,6 +29,9 @@ contract TreasureSeeker is EIP712WithModifier {
 
     }
 
+    
+
+
 
     function joinMatch() public {
         require(inGame[msg.sender] == false);
@@ -85,6 +88,9 @@ contract TreasureSeeker is EIP712WithModifier {
             gameSession[currentPlayer1] = gameId;
             gameSession[msg.sender] = gameId;
 
+            minedTileLength[gameId][currentPlayer1] = 1;
+            minedTileLength[gameId][msg.sender] = 1;
+
             gameId++;
 
             matchmaker[0] = address(0x0);
@@ -114,6 +120,92 @@ contract TreasureSeeker is EIP712WithModifier {
         activeMiner[msg.sender] = true;
         lastAction[msg.sender] = block.number;
     }
+
+
+
+    mapping (uint => euint8) usedSpots;
+    uint8 public usedSpotLength = 1;
+
+    mapping (uint => mapping (address => mapping (uint8 => euint8))) minedTiles;
+    mapping (uint => mapping(address => uint8)) minedTileLength;
+
+    function makeThing() public {
+        euint8 newThing = TFHE.randEuint8();
+        uint i = 1;
+        euint8 detectMinedBase = TFHE.randEuint8();
+        detectMinedBase = TFHE.sub(detectMinedBase, detectMinedBase);
+        euint8 detectMined = detectMinedBase;
+        uint arrayLength = usedSpotLength;
+        for (i; i < arrayLength; i++) {
+            ebool alreadyMined = TFHE.eq(newThing, usedSpots[i]);
+            detectMined = TFHE.cmux(alreadyMined, TFHE.add(detectMined, 1), detectMined);
+        }
+        ebool wasAlreadyMined = TFHE.gt(detectMined, detectMinedBase);
+        //currentResources[msg.sender] = TFHE.cmux(wasAlreadyMined, TFHE.sub(resources, 33), TFHE.add(resources, 1));
+        usedSpots[usedSpotLength] = newThing;
+        usedSpotLength++;
+    }
+
+
+    // New tryMine() transaction to correct information leak (currently testing)
+
+    // Choose a spot to mine.  If the mine has a trap, you will lose 33 points.  Otherwise, you gain 1 point.
+    // Must mine within the boundaries of the board (0-24)
+    // Can't mine in the same spot twice
+    function tryMine2(euint8 location) public {
+        address opponent = currentOpponent[msg.sender];
+        euint8 resources = currentResources[msg.sender];
+
+        require(activeMiner[msg.sender] == true);
+        require(hasSetTraps[opponent] == true);
+
+        // Check that the tile is not greater than 24
+        ebool outOfBounds = TFHE.gt(location, 24);
+        resources = TFHE.cmux(outOfBounds, TFHE.sub(resources, resources), resources);
+
+        // Check that the tile has not been mined more than once
+        uint session = gameSession[msg.sender];
+        uint8 arrayLength = minedTileLength[session][msg.sender];
+
+        uint8 k = 1;
+        euint8 detectMinedBase = TFHE.randEuint8();
+        detectMinedBase = TFHE.sub(detectMinedBase, detectMinedBase);
+        euint8 detectMined = detectMinedBase;
+
+        // Tile cannot match an existing mapping, or the player will lose
+        for (k; k < arrayLength; k++) {
+            ebool alreadyMined = TFHE.eq(location, minedTiles[session][msg.sender][k]);
+            detectMined = TFHE.cmux(alreadyMined, TFHE.add(detectMined, 1), detectMined);
+        }
+        ebool wasAlreadyMined = TFHE.gt(detectMined, detectMinedBase);
+        resources = TFHE.cmux(wasAlreadyMined, TFHE.sub(resources, resources), resources);
+
+        // Map the tile
+        minedTiles[session][msg.sender][arrayLength] = location;
+        minedTileLength[session][msg.sender]++;
+
+        // Now check whether the tile was trapped
+        euint8 detectTrappedBase = TFHE.randEuint8();
+        ebool lowRand = TFHE.lt(detectTrappedBase, 3);
+        detectTrappedBase = TFHE.cmux(lowRand, TFHE.add(detectTrappedBase, 3), detectTrappedBase);
+        euint8 detectTrapped = detectTrappedBase;
+
+        // Scoping variables to prevent stack too deep error
+        address _opponent = opponent;
+        euint8 _location = location;
+        euint8 _resources = resources;
+
+        // Check whether the given location matches a trapped tile
+        for (uint i; i < 3; i++) {
+            ebool trapped = TFHE.eq(traps[_opponent][i], _location);
+            detectTrapped = TFHE.cmux(trapped, TFHE.sub(detectTrapped, 1), detectTrapped);
+        }
+
+        ebool wasTrapped = TFHE.lt(detectTrapped, detectTrappedBase);
+        currentResources[msg.sender] = TFHE.cmux(wasTrapped, TFHE.sub(_resources, _resources), TFHE.add(_resources, 1));
+        lastAction[msg.sender] = block.number;
+    }
+
 
 
     // Choose a spot to mine.  If the mine has a trap, you will lose 33 points.  Otherwise, you gain 1 point.
