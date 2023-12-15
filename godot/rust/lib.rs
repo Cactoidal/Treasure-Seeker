@@ -78,7 +78,7 @@ impl Future for NewFuture {
 name = "Authorization token",
 version = "1",
 chain_id = 8009,
-verifying_contract = "0x3e1fE0a71765411A638E096bC84a62498277F63e"
+verifying_contract = "0x90419A5A86fE044B09114aeA0741f6da8f5E52dB"
 )]
 struct Reencrypt {
     publicKey: [u8; 32]
