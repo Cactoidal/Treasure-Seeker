@@ -153,14 +153,19 @@ func follow_up_mine(var tile):
 	pending_miners.push_back(tile)
 
 var mine_id = 1
+var score_obtained = false
 func handle_score(var new_score):
 	print("Turn " + String(mine_id) + "\n")
 	mine_id += 1
 	print("Current score: " + String(current_score) + "\n")
 	print("New score: " + String(new_score) + "\n")
 	
+	if new_score == 0 && score_obtained == true:
+		print("rpc error")
+		return
 	if current_score == 0:
 		current_score = new_score
+		score_obtained = true
 	else:
 		if new_score > current_score:
 			#survived
@@ -206,4 +211,5 @@ func conclude_game():
 	ethers.camera.make_current()
 	ethers.fadein = true
 	ethers.in_queue = false
+	ethers.player = null
 	get_parent().queue_free()
