@@ -64,13 +64,6 @@
 	},
 	{
 		"inputs": [],
-		"name": "initializePointBalance",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
 		"name": "joinMatch",
 		"outputs": [],
 		"stateMutability": "nonpayable",
@@ -332,25 +325,6 @@
 				"type": "address"
 			}
 		],
-		"name": "playerTokens",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
 		"name": "queueStartTime",
 		"outputs": [
 			{
@@ -376,43 +350,6 @@
 				"internalType": "bool",
 				"name": "",
 				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "publicKey",
-				"type": "bytes32"
-			},
-			{
-				"internalType": "bytes",
-				"name": "signature",
-				"type": "bytes"
-			}
-		],
-		"name": "test_decrypt",
-		"outputs": [
-			{
-				"internalType": "bytes",
-				"name": "",
-				"type": "bytes"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "test_decrypt_value",
-		"outputs": [
-			{
-				"internalType": "euint8",
-				"name": "",
-				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
