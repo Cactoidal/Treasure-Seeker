@@ -4,7 +4,7 @@ pragma solidity 0.8.19;
 import "fhevm/lib/TFHE.sol";
 import "fhevm/abstracts/EIP712WithModifier.sol";
 
-contract FHEGame is EIP712WithModifier {
+contract TreasureSeeker is EIP712WithModifier {
 
     mapping (address => bool) public playerInitialized;
     mapping (address => euint32) public playerPoints;
