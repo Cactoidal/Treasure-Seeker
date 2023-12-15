@@ -116,7 +116,7 @@ The player can't be allowed to mine the same location twice, otherwise they coul
 
 I still have a couple days to think this over until the actual deadline, but this may be an intractable problem.  The traps, at least, do remain secret until they are hit, which is something that would be very difficult to do without the fhEVM.  
 
-But the score was also kept homomorphic, because my intent was that neither player should know the fate of the other, until the very end of the game.  As it stands, because I've used cleartext locations to prevent the same tile being mined twice, knowledge of the other player's score leaks with every transaction.
+But the score was also kept homomorphic, because my intent was that neither player should know the fate of the other until the very end of the game.  As it stands, because I've used cleartext locations to prevent the same tile being mined twice, knowledge of the other player's score leaks with every transaction.
 
 
 
