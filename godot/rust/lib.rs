@@ -78,7 +78,7 @@ impl Future for NewFuture {
 name = "Authorization token",
 version = "1",
 chain_id = 8009,
-verifying_contract = "0x5585448F711D648A89D2C61534C28266CA7eD889"
+verifying_contract = "0x3e1fE0a71765411A638E096bC84a62498277F63e"
 )]
 struct Reencrypt {
     publicKey: [u8; 32]
@@ -147,6 +147,7 @@ let return_string: GodotString = calldata.to_string().into();
 
 return_string
 
+
 }
 
 #[method]
@@ -204,7 +205,7 @@ let contract = FHEABI::new(contract_address.clone(), Arc::new(client.clone()));
 
 let player_address: Address = _player_address.to_string().parse().unwrap();
 
-let calldata = contract.ready_to_end(player_address).calldata().unwrap();
+let calldata = contract.in_game(player_address).calldata().unwrap();
 
 let return_string: GodotString = calldata.to_string().into();
 
@@ -262,56 +263,6 @@ async fn join_match(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: God
 
     NewFuture(Ok(()))
 }
-
-#[method]
-#[tokio::main]
-async fn initialize_player(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: GodotString, rpc: GodotString, _gas_fee: u64, _count: u64, ui_node: Ref<Control>) -> NewFuture {
-    
-    let vec = &key.to_vec();
-
-    let keyset = &vec[..]; 
-         
-    let prewallet : LocalWallet = LocalWallet::from_bytes(&keyset).unwrap();
-    
-    let wallet: LocalWallet = prewallet.with_chain_id(chain_id);
-    
-    let user_address = wallet.address();
-    
-    let provider = Provider::<Http>::try_from(rpc.to_string()).expect("could not instantiate HTTP Provider");
-    
-    let contract_address: Address = fhe_contract_address.to_string().parse().unwrap();
-    
-    let client = SignerMiddleware::new(provider, wallet.clone());
-    
-    let contract = FHEABI::new(contract_address.clone(), Arc::new(client.clone()));
-
-    let calldata = contract.initialize_point_balance().calldata().unwrap();
-
-    let tx = Eip1559TransactionRequest::new()
-        .from(user_address)
-        .to(contract_address) 
-        .value(0)
-        .gas(9000000)
-        .max_fee_per_gas(_gas_fee)
-        .max_priority_fee_per_gas(_gas_fee)
-        .chain_id(chain_id)
-        .nonce(_count)
-        .data(calldata);
-
-    let typed_tx: TypedTransaction = TypedTransaction::Eip1559(tx.clone());
-
-    let signature = wallet.sign_transaction(&typed_tx).await.unwrap();
-    let signed_data = TypedTransaction::rlp_signed(&typed_tx, &signature);
-
-    let node: TRef<Control> = unsafe { ui_node.assume_safe() };
-
-    unsafe {
-        node.call("set_signed_data", &[hex::encode(signed_data).to_variant()])
-    };
-
-    NewFuture(Ok(()))
-}
-
 
 
 #[method]
@@ -391,6 +342,7 @@ async fn set_traps(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: Godo
 
     NewFuture(Ok(()))
 }
+
 
 #[method]
 #[tokio::main]
@@ -490,6 +442,104 @@ async fn stop_mining(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: Go
     NewFuture(Ok(()))
 }
 
+#[method]
+#[tokio::main]
+async fn exit_queue(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: GodotString, rpc: GodotString, _gas_fee: u64, _count: u64, ui_node: Ref<Control>) -> NewFuture {
+    
+    let vec = &key.to_vec();
+
+    let keyset = &vec[..]; 
+         
+    let prewallet : LocalWallet = LocalWallet::from_bytes(&keyset).unwrap();
+    
+    let wallet: LocalWallet = prewallet.with_chain_id(chain_id);
+    
+    let user_address = wallet.address();
+    
+    let provider = Provider::<Http>::try_from(rpc.to_string()).expect("could not instantiate HTTP Provider");
+    
+    let contract_address: Address = fhe_contract_address.to_string().parse().unwrap();
+    
+    let client = SignerMiddleware::new(provider, wallet.clone());
+    
+    let contract = FHEABI::new(contract_address.clone(), Arc::new(client.clone()));
+
+    let calldata = contract.exit_queue().calldata().unwrap();
+
+    let tx = Eip1559TransactionRequest::new()
+        .from(user_address)
+        .to(contract_address) 
+        .value(0)
+        .gas(9000000)
+        .max_fee_per_gas(_gas_fee)
+        .max_priority_fee_per_gas(_gas_fee)
+        .chain_id(chain_id)
+        .nonce(_count)
+        .data(calldata);
+
+    let typed_tx: TypedTransaction = TypedTransaction::Eip1559(tx.clone());
+
+    let signature = wallet.sign_transaction(&typed_tx).await.unwrap();
+    let signed_data = TypedTransaction::rlp_signed(&typed_tx, &signature);
+
+    let node: TRef<Control> = unsafe { ui_node.assume_safe() };
+
+    unsafe {
+        node.call("set_signed_data", &[hex::encode(signed_data).to_variant()])
+    };
+
+    NewFuture(Ok(()))
+}
+
+#[method]
+#[tokio::main]
+async fn force_end(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: GodotString, rpc: GodotString, _gas_fee: u64, _count: u64, ui_node: Ref<Control>) -> NewFuture {
+    
+    let vec = &key.to_vec();
+
+    let keyset = &vec[..]; 
+         
+    let prewallet : LocalWallet = LocalWallet::from_bytes(&keyset).unwrap();
+    
+    let wallet: LocalWallet = prewallet.with_chain_id(chain_id);
+    
+    let user_address = wallet.address();
+    
+    let provider = Provider::<Http>::try_from(rpc.to_string()).expect("could not instantiate HTTP Provider");
+    
+    let contract_address: Address = fhe_contract_address.to_string().parse().unwrap();
+    
+    let client = SignerMiddleware::new(provider, wallet.clone());
+    
+    let contract = FHEABI::new(contract_address.clone(), Arc::new(client.clone()));
+
+    let calldata = contract.force_end_game().calldata().unwrap();
+
+    let tx = Eip1559TransactionRequest::new()
+        .from(user_address)
+        .to(contract_address) 
+        .value(0)
+        .gas(9000000)
+        .max_fee_per_gas(_gas_fee)
+        .max_priority_fee_per_gas(_gas_fee)
+        .chain_id(chain_id)
+        .nonce(_count)
+        .data(calldata);
+
+    let typed_tx: TypedTransaction = TypedTransaction::Eip1559(tx.clone());
+
+    let signature = wallet.sign_transaction(&typed_tx).await.unwrap();
+    let signed_data = TypedTransaction::rlp_signed(&typed_tx, &signature);
+
+    let node: TRef<Control> = unsafe { ui_node.assume_safe() };
+
+    unsafe {
+        node.call("set_signed_data", &[hex::encode(signed_data).to_variant()])
+    };
+
+    NewFuture(Ok(()))
+}
+
 
 #[method]
 #[tokio::main]
@@ -533,7 +583,7 @@ async fn track_score(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: Go
     let node: TRef<Control> = unsafe { ui_node.assume_safe() };
 
     unsafe {
-        node.call("set_box_keys", &[hex_public_key.to_variant(), hex_secret_key.to_variant(), calldata.to_string().to_variant()])
+        node.call("box_keys_for_current_score", &[hex_public_key.to_variant(), hex_secret_key.to_variant(), calldata.to_string().to_variant()])
     };
 
     NewFuture(Ok(()))
@@ -541,7 +591,7 @@ async fn track_score(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: Go
 
 
 #[method]
-fn decode_crypto_box(box_public_key: GodotString, box_secret_key: GodotString, secret: GodotString) -> u8 {
+fn decode_score_crypto_box(box_public_key: GodotString, box_secret_key: GodotString, secret: GodotString) -> u8 {
     let raw_hex: String = secret.to_string();
     let decoded: Bytes = ethers::abi::AbiDecode::decode_hex(raw_hex).unwrap();
     let ciphertext_vec: Vec<u8> = decoded.iter().map(|x| x.clone()).collect();
@@ -569,12 +619,101 @@ fn decode_crypto_box(box_public_key: GodotString, box_secret_key: GodotString, s
                 public_key.as_ptr(), 
                 secret_key.as_ptr());
     }
-
+    godot_print!("{:?}", decrypted_message);
     let number = [decrypted_message[0]];
     let decrypted_number = u8::from_be_bytes(number);
 
     decrypted_number
 }
+
+
+
+
+#[method]
+#[tokio::main]
+async fn get_points_balance(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: GodotString, rpc: GodotString, ui_node: Ref<Control>) -> NewFuture {
+    let vec = &key.to_vec();
+
+    let keyset = &vec[..]; 
+         
+    let prewallet : LocalWallet = LocalWallet::from_bytes(&keyset).unwrap();
+    
+    let wallet: LocalWallet = prewallet.with_chain_id(chain_id);
+    
+    let user_address = wallet.address();
+    
+    let provider = Provider::<Http>::try_from(rpc.to_string()).expect("could not instantiate HTTP Provider");
+    
+    let contract_address: Address = fhe_contract_address.to_string().parse().unwrap();
+    
+    let client = SignerMiddleware::new(provider, wallet.clone());
+    
+    let contract = FHEABI::new(contract_address.clone(), Arc::new(client.clone()));
+
+    let mut public_key = [0u8; libsodium_sys::crypto_box_PUBLICKEYBYTES as usize];
+    let mut secret_key = [0u8; libsodium_sys::crypto_box_SECRETKEYBYTES as usize];
+    
+    unsafe {
+    let keypair = crypto_box_keypair(public_key.as_mut_ptr(),  secret_key.as_mut_ptr());
+    }
+
+    let new_eip712 = Reencrypt {
+        publicKey: public_key
+    };
+   
+    let signature: Bytes = wallet.sign_typed_data(&new_eip712).await.unwrap().to_vec().into();
+
+    let calldata = contract.get_points_balance(public_key, signature).calldata().unwrap();
+
+    let hex_public_key = hex::encode(&public_key);
+    let hex_secret_key = hex::encode(&secret_key);
+
+    let node: TRef<Control> = unsafe { ui_node.assume_safe() };
+
+    unsafe {
+        node.call("box_keys_for_points_balance", &[hex_public_key.to_variant(), hex_secret_key.to_variant(), calldata.to_string().to_variant()])
+    };
+
+    NewFuture(Ok(()))
+}
+
+
+#[method]
+fn decode_points_crypto_box(box_public_key: GodotString, box_secret_key: GodotString, secret: GodotString) -> u32 {
+    let raw_hex: String = secret.to_string();
+    let decoded: Bytes = ethers::abi::AbiDecode::decode_hex(raw_hex).unwrap();
+    let ciphertext_vec: Vec<u8> = decoded.iter().map(|x| x.clone()).collect();
+    let ciphertext_bytes = &ciphertext_vec[..]; 
+
+    let public_vec = hex::decode(box_public_key.to_string()).unwrap();
+    let public_bytes = &public_vec[..];
+    
+    let secret_vec = hex::decode(box_secret_key.to_string()).unwrap();
+    let secret_bytes = &secret_vec[..];
+
+    let mut public_key = [0u8; 32];
+    let mut secret_key = [0u8; 32];
+
+    public_key[..public_bytes.len()].copy_from_slice(public_bytes);
+    secret_key[..secret_bytes.len()].copy_from_slice(secret_bytes);
+
+    let mut decrypted_message = vec![0u8; ciphertext_bytes.len()];
+
+    unsafe {
+    crypto_box_seal_open(
+                decrypted_message.as_mut_ptr(),
+                ciphertext_bytes.as_ptr(),
+                ciphertext_bytes.len() as u64, 
+                public_key.as_ptr(), 
+                secret_key.as_ptr());
+    }
+    
+    let number = [decrypted_message[0], decrypted_message[1], decrypted_message[2], decrypted_message[3]];
+    let decrypted_number = u32::from_le_bytes(number);
+
+    decrypted_number
+}
+
 
 
 #[method]
