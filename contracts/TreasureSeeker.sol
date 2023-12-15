@@ -122,29 +122,8 @@ contract TreasureSeeker is EIP712WithModifier {
     }
 
 
-
-    mapping (uint => euint8) usedSpots;
-    uint8 public usedSpotLength = 1;
-
     mapping (uint => mapping (address => mapping (uint8 => euint8))) minedTiles;
     mapping (uint => mapping(address => uint8)) minedTileLength;
-
-    function makeThing() public {
-        euint8 newThing = TFHE.randEuint8();
-        uint i = 1;
-        euint8 detectMinedBase = TFHE.randEuint8();
-        detectMinedBase = TFHE.sub(detectMinedBase, detectMinedBase);
-        euint8 detectMined = detectMinedBase;
-        uint arrayLength = usedSpotLength;
-        for (i; i < arrayLength; i++) {
-            ebool alreadyMined = TFHE.eq(newThing, usedSpots[i]);
-            detectMined = TFHE.cmux(alreadyMined, TFHE.add(detectMined, 1), detectMined);
-        }
-        ebool wasAlreadyMined = TFHE.gt(detectMined, detectMinedBase);
-        //currentResources[msg.sender] = TFHE.cmux(wasAlreadyMined, TFHE.sub(resources, 33), TFHE.add(resources, 1));
-        usedSpots[usedSpotLength] = newThing;
-        usedSpotLength++;
-    }
 
 
     // New tryMine() transaction to correct information leak (currently testing)
