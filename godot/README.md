@@ -118,6 +118,12 @@ I still have a couple days to think this over until the actual deadline, but thi
 
 But the score was also kept homomorphic, because my intent was that neither player should know the fate of the other until the very end of the game.  As it stands, because I've used cleartext locations to prevent the same tile being mined twice, knowledge of the other player's score leaks with every transaction.
 
+___
 
+Well, it'll be a hacky solution, but at the moment I don't think I have a choice.  The game really needs to be totally redesigned, but I can make some tweaks to the current code to preserve the secrecy of information.
 
+Instead of taking a cleartext uint8, tryMine() will now take a homomorphically encrypted euint8.  It will be compared to a mapping of every other euint8 the player has committed so far in the match, and the player's score will be reduced if there is a duplicate (making them lose).
 
+The player will also autolose if the game detects that the euint8 is greater than 24.
+
+Naturally, looping through many mappings and repeatedly cmuxxing will blow up the cost of a transaction, which is less than ideal.  But it at least corrects the current problem.
