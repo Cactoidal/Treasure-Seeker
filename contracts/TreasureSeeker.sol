@@ -31,7 +31,7 @@ contract TreasureSeeker is EIP712WithModifier {
     address testOpponent = 0x2Bd1324482B9036708a7659A3FCe20DfaDD455ba;
 
     constructor() EIP712WithModifier("Authorization token", "1") {
-        test_decrypt_value = TFHE.randEuint8();
+
     }
 
 
@@ -39,7 +39,7 @@ contract TreasureSeeker is EIP712WithModifier {
         require(inGame[msg.sender] == false);
         require(waitingForMatch[msg.sender] == false);
 
-        
+        // Player's overall point total cannot be 0
         if (playerInitialized[msg.sender] == false) {
             playerInitialized[msg.sender] = true;
             playerPoints[msg.sender] = TFHE.randEuint32();
@@ -121,12 +121,6 @@ contract TreasureSeeker is EIP712WithModifier {
     }
 
 
-    euint8 public secret_value;
-    function test_set_number(bytes calldata _secret_value) public {
-        euint8 number = TFHE.asEuint8(_secret_value);
-        secret_value = number;
-    }
-
     // Choose 3 spots on the board to trap
     // A modder could try to trap outside the boundaries of the board (0-24), or stack traps on the same space,
     // but these OoB traps would have no effect on the game, aside from reducing the number of traps in play
@@ -166,9 +160,11 @@ contract TreasureSeeker is EIP712WithModifier {
         require(hasSetTraps[opponent] == true);
 
         euint8 detectTrappedBase = TFHE.randEuint8();
-        ebool lowRand = TFHE.eq(detectTrappedBase, 0);
+        ebool lowRand = TFHE.lt(detectTrappedBase, 3);
         detectTrappedBase = TFHE.cmux(lowRand, TFHE.add(detectTrappedBase, 3), detectTrappedBase);
         euint8 detectTrapped = detectTrappedBase;
+
+        // Check whether the given location matches a trapped tile
         for (uint i; i < 3; i++) {
             ebool trapped = TFHE.eq(traps[opponent][i], location);
             detectTrapped = TFHE.cmux(trapped, TFHE.sub(detectTrapped, 1), detectTrapped);
@@ -263,6 +259,8 @@ contract TreasureSeeker is EIP712WithModifier {
     
 
 
+    // The overall score total across all matches the player has won.  Checked after the match
+    // to see if the player won or lost the match.
     function getPointsBalance(
         bytes32 publicKey,
         bytes calldata signature
@@ -270,33 +268,6 @@ contract TreasureSeeker is EIP712WithModifier {
             return TFHE.reencrypt(playerPoints[msg.sender], publicKey, 0);
         }
         
-
-    // Retrieve your current score using EIP712 key exchange
-    /*
-    function currentScore(
-        bytes32 publicKey,
-        bytes calldata signature
-        ) public view onlySignedPublicKey(publicKey, signature) returns (bytes memory) {
-            euint8 playerBaseScore = baseResources[msg.sender];
-            euint8 playerCurrentScore = currentResources[msg.sender];
-
-            ebool playerScoreAboveZero = TFHE.gt(playerCurrentScore, playerBaseScore);
-            euint8 playerScore = TFHE.cmux(playerScoreAboveZero, TFHE.sub(playerCurrentScore, playerBaseScore), TFHE.sub(playerBaseScore, playerBaseScore));
-            return TFHE.reencrypt(playerScore, publicKey, 0);
-        }
-    */
-
-
-    // Debug functions
-   
-    euint8 public test_decrypt_value;
-    function test_decrypt(
-        bytes32 publicKey,
-        bytes calldata signature
-        ) public view onlySignedPublicKey(publicKey, signature) returns (bytes memory) {
-            return TFHE.reencrypt(test_decrypt_value, publicKey, 0);
-        }
-
   }
 
 
