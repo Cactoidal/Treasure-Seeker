@@ -193,6 +193,7 @@ func hit_trap():
 
 func stop_mining():
 	if mine_wait_timer == 0 && stopped_mining == false:
+		check_score_timer = 0
 		stopped_mining = true
 		ethers.start_transaction("stop_mining")
 		mine_phase = false
@@ -205,7 +206,6 @@ func stop_mining():
 
 
 func conclude_game():
-	print("hello")
 	ethers.get_node("Fadeout/Background/Waiting").visible = false
 	ethers.get_node("Fadeout/Background").visible = false
 	ethers.camera.make_current()

@@ -37,10 +37,11 @@ func set_trap():
 
 func try_mine():
 	if activated == true && already_used == false:
+		print(String(tile_number))
 		already_used = true
 		stay_visible = true
 		player.ui.get_node("MinePhase/MineTimer").visible = true
-		player.mine_wait_timer = 9
+		player.mine_wait_timer = 11
 		player.ethers.start_transaction("try_mine", tile_number)
 		player.follow_up_mine(self)
 		oscillate_timer = 1.2
