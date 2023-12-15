@@ -12,6 +12,8 @@ contract TreasureSeeker is EIP712WithModifier {
     address[2] matchmaker;
     mapping (address => uint) public queueStartTime;
     mapping (address => bool) public waitingForMatch;
+    uint gameId = 1;
+    mapping (address => uint) gameSession;
     mapping (address => bool) public inGame;
     mapping (address => address) public currentOpponent;
     mapping (address => euint8) baseResources;
@@ -19,16 +21,9 @@ contract TreasureSeeker is EIP712WithModifier {
     mapping (address => euint8[3]) traps;
     mapping (address => bool) public hasSetTraps;
     mapping (address => bool) public activeMiner;
+    mapping (uint => mapping (address => mapping (uint8 => bool))) minedLocations;
     mapping (address => bool) public readyToEnd;
     mapping (address => uint) public lastAction;
-
-    uint gameId = 1;
-    mapping (address => uint) gameSession;
-    mapping (uint => mapping (address => mapping (uint8 => bool))) minedLocations;
-   
-
-    // For Testing
-    address testOpponent = 0x2Bd1324482B9036708a7659A3FCe20DfaDD455ba;
 
     constructor() EIP712WithModifier("Authorization token", "1") {
 
@@ -39,28 +34,12 @@ contract TreasureSeeker is EIP712WithModifier {
         require(inGame[msg.sender] == false);
         require(waitingForMatch[msg.sender] == false);
 
-        // Player's overall point total cannot be 0
+        // Player's initial overall point total must be homomorphically encrypted
         if (playerInitialized[msg.sender] == false) {
             playerInitialized[msg.sender] = true;
             playerPoints[msg.sender] = TFHE.randEuint32();
             playerPoints[msg.sender] = TFHE.sub(playerPoints[msg.sender],  playerPoints[msg.sender]);
-
-            // For Testing   //
-            playerPoints[testOpponent] = TFHE.randEuint32();
-            playerPoints[testOpponent] = TFHE.sub(playerPoints[testOpponent],  playerPoints[testOpponent]);
-            ///////////
         }
-
-        //  For Testing   //
-        matchmaker[0] = testOpponent;
-        queueStartTime[testOpponent] = block.number + 10000; 
-        baseResources[testOpponent] = TFHE.randEuint8();
-        ebool lowOpponentResources = TFHE.lt(baseResources[testOpponent], 100);
-        baseResources[testOpponent] = TFHE.cmux(lowOpponentResources, TFHE.add(baseResources[testOpponent], 99), baseResources[testOpponent]);
-        ebool highOpponentResources = TFHE.gt(baseResources[testOpponent], 200);
-        baseResources[testOpponent] = TFHE.cmux(highOpponentResources, TFHE.sub(baseResources[testOpponent], 99), baseResources[testOpponent]);
-        ///////////
-    
 
         // Initialize "base resource" value.  It cannot be too low or too high, to prevent underflow/overflow
         // This value will be used as a comparator later, and is meant to obscure the player's in-game status
@@ -134,14 +113,6 @@ contract TreasureSeeker is EIP712WithModifier {
         hasSetTraps[msg.sender] = true;
         activeMiner[msg.sender] = true;
         lastAction[msg.sender] = block.number;
-
-        /// For Testing
-        address opponent = currentOpponent[msg.sender];
-        traps[opponent] = [trap1,trap2,trap3];
-        hasSetTraps[opponent] = true;
-        activeMiner[opponent] = true;
-        lastAction[opponent] = block.number;
-        ///////////
     }
 
 
@@ -179,16 +150,12 @@ contract TreasureSeeker is EIP712WithModifier {
     // If both players have signalled, the game will end.
     // Player scores are obtained by comparing and subtracting the "base resource" from the "current resource".
     // The player scores are then compared to determine the winner.
+    // The winner's overall point total is increased by their score.
     // Both players are reinitialized.
     function stopMining() public {
         require(inGame[msg.sender] == true);
         require(activeMiner[msg.sender] == true);
         address opponent = currentOpponent[msg.sender];
-
-        // For Testing
-        activeMiner[opponent] = false;
-        readyToEnd[opponent] = true;
-        ///////////
 
         if (readyToEnd[opponent] == true) {
 
@@ -259,7 +226,7 @@ contract TreasureSeeker is EIP712WithModifier {
     
 
 
-    // The overall score total across all matches the player has won.  Checked after the match
+    // The overall point total across all matches the player has won.  Checked after the match
     // to see if the player won or lost the match.
     function getPointsBalance(
         bytes32 publicKey,
