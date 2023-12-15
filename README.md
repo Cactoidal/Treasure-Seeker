@@ -12,6 +12,8 @@
 
 [Ethers-rs](https://github.com/gakonst/ethers-rs)
 
+[FPS Controller](https://github.com/GarbajYT/godot_updated_fps_controller/blob/main/FPS_controller_3.3/FPS.gd) by Garbaj
+
 [Allsky Skybox](https://github.com/rpgwhitelock/AllSkyFree_Godot/blob/master/addons/AllSkyFree/Skyboxes/AllSkyFree_Sky_OvercastLow_Equirect.png) by rpgwhitelock
 
 [Procedural Terrain Shader](https://www.reddit.com/r/godot/comments/z7r13b/cheap_3d_terrain_generator_with_noise_texture_for/) by AllenGnr
