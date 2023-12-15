@@ -106,6 +106,18 @@ I've also created a [short demo video](https://www.youtube.com/watch?v=wdNZbRqhC
 
 And that brings this first experiment with the fhEVM to a close.  As always, thanks for reading.
 
+___
+
+After submitting the work, I've realized that there is a big problem with the design: when cleartext locations are submitted during mining, the opponent can of course know whether the player has hit a trap.
+
+While the locations could be passed as euint8s intead, this introduces another issue.
+
+The player can't be allowed to mine the same location twice, otherwise they could farm points infinitely.  There doesn't seem to be an easy homomorphic way to check which tiles have been mined.  The euint8 can't be used in the "minedLocations" mapping, because the ciphertext for the same euint8 will be different every time it is made.
+
+I still have a couple days to think this over until the actual deadline, but this may be an intractable problem.  The traps, at least, do remain secret until they are hit, which is something that would be very difficult to do without the fhEVM.  
+
+But the score was also kept homomorphic, because my intent was that neither player should know the fate of the other, until the very end of the game.  As it stands, because I've used cleartext locations to prevent the same tile being mined twice, knowledge of the other player's score leaks with every transaction.
+
 
 
 
