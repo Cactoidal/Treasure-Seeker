@@ -179,13 +179,15 @@ margin_bottom = 426.0
 color = Color( 0, 0, 0, 1 )
 
 [node name="Result" type="Label" parent="UI/MatchResolution"]
-margin_left = 48.0
-margin_top = 40.0
-margin_right = 163.0
-margin_bottom = 91.0
+margin_left = 49.0
+margin_top = 26.0
+margin_right = 164.0
+margin_bottom = 77.0
 text = "You won!
 
-+1 points"
++1 points
+
+Total points: 1"
 align = 1
 
 [node name="DebugMenu" type="ColorRect" parent="."]

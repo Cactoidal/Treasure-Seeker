@@ -16,7 +16,7 @@ var points_box_public_key
 var points_box_secret_key
 var points_box_key_calldata
 
-var test_contract = "0x3e1fE0a71765411A638E096bC84a62498277F63e"
+var test_contract = "0x90419A5A86fE044B09114aeA0741f6da8f5E52dB"
 
 var signed_data = ""
 
@@ -585,6 +585,7 @@ func get_points_balance_attempted(result, response_code, headers, body):
 				else:
 					$MatchResolution/Result.text = "You won!\n\n+" + String(points) + " point"
 				player_points_balance = number
+				$MatchResolution/Result.text += "\n\nTotal score: " + String(number)
 			else:
 				$MatchResolution/Result.text = "You lost..."
 
