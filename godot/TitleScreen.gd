@@ -8,9 +8,13 @@ var req_header = "Content-Type: application/json"
 var chain_id = 8009
 var chain_public_key
 
-var box_public_key
-var box_secret_key
-var box_key_calldata
+var score_box_public_key
+var score_box_secret_key
+var score_box_key_calldata
+
+var points_box_public_key
+var points_box_secret_key
+var points_box_key_calldata
 
 var test_contract = "0x3e1fE0a71765411A638E096bC84a62498277F63e"
 
@@ -30,6 +34,9 @@ var player
 var game_board = load("res://Field.tscn")
 var press_space_text = load("res://PressSpace.png")
 var waiting_for_opponent_text = load("res://WaitingForOpponent.png")
+
+var player_points_balance = 0
+var got_player_points = false
 
 var queueable = false
 var in_queue = false
@@ -69,6 +76,7 @@ var exiting = false
 
 var check_opponent_trap_timer = false
 var check_opponent_end_game_timer = false
+var resolution_timer = 0
 
 func _process(delta):
 	if fadeout == true:
@@ -117,6 +125,12 @@ func _process(delta):
 				check_ending_status(user_address)
 			else:
 				check_ending_status(player.opponent)
+	
+	if resolution_timer > 0:
+		resolution_timer -= delta
+		if resolution_timer < 0:
+			resolution_timer = 0
+			$MatchResolution.visible = false
 	
 	if Input.is_action_just_pressed("action") && queueable == true && in_queue == false:
 		in_queue = true
@@ -315,10 +329,13 @@ func check_mining_status_attempted(result, response_code, headers, body):
 		if status == "true":
 			if player.started_mining == false:
 				player.started_mining = true
+				#HELLO
+				get_player_points_balance()
 			else:
 				check_mining_timer = 0
 				player.start_mining()
 				fadein = true
+				
 		
 	
 
@@ -352,11 +369,16 @@ func check_ending_status_attempted(result, response_code, headers, body):
 		print(get_result)
 		var status = Fhe.decode_bool(get_result["result"])
 		if status == "false":
-			if player.game_ended == false:
-				player.game_ended = true
+			if player != null:
+				if player.game_ended == false:
+					player.game_ended = true
+				else:
+					check_ending_timer = 0
+					#HELLO
+					get_player_points_balance()
+					player.conclude_game()
 			else:
 				check_ending_timer = 0
-				player.conclude_game()
 
 
 func get_tx_count():
@@ -377,7 +399,7 @@ func get_tx_count():
 func get_tx_count_attempted(result, response_code, headers, body):
 	
 	var get_result = parse_json(body.get_string_from_ascii())
-	print(get_result["result"].hex_to_int())
+	
 	if response_code == 200:
 		var count = get_result["result"].hex_to_int()
 		tx_count = count
@@ -493,7 +515,7 @@ func get_current_score():
 	file.open("user://keystore", File.READ)
 	var content = file.get_buffer(32)
 	file.close()
-	var calldata = box_key_calldata
+	var calldata = score_box_key_calldata
 	
 	var tx = {"jsonrpc": "2.0", "method": "eth_call", "params": [{"to": test_contract, "from": user_address, "input": calldata}, "latest"], "id": 7}
 	
@@ -509,21 +531,79 @@ func get_current_score_attempted(result, response_code, headers, body):
 	var get_result = parse_json(body.get_string_from_ascii())
 	if response_code == 200:
 		var secret = get_result["result"]
-		var number = Fhe.decode_crypto_box(box_public_key, box_secret_key, secret)
+		var number = Fhe.decode_score_crypto_box(score_box_public_key, score_box_secret_key, secret)
 		player.handle_score(number)
 	
+
+
+func get_player_points_balance():
+	var file = File.new()
+	file.open("user://keystore", File.READ)
+	var content = file.get_buffer(32)
+	file.close()
+	
+	Fhe.get_points_balance(content, chain_id, test_contract, zama_rpc, self)
+
+func get_points_balance():
+	var http_request = HTTPRequest.new()
+	$HTTP.add_child(http_request)
+	http_request_delete_tx_write = http_request
+	http_request.connect("request_completed", self, "get_points_balance_attempted")
+	
+	var file = File.new()
+	file.open("user://keystore", File.READ)
+	var content = file.get_buffer(32)
+	file.close()
+	var calldata = points_box_key_calldata
+	
+	var tx = {"jsonrpc": "2.0", "method": "eth_call", "params": [{"to": test_contract, "from": user_address, "input": calldata}, "latest"], "id": 7}
+	
+	var error = http_request.request(zama_rpc, 
+	[req_header], 
+	true, 
+	HTTPClient.METHOD_POST, 
+	JSON.print(tx))
+	
+
+func get_points_balance_attempted(result, response_code, headers, body):
+	
+	var get_result = parse_json(body.get_string_from_ascii())
+	if response_code == 200:
+		var secret = get_result["result"]
+		var number = Fhe.decode_points_crypto_box(points_box_public_key, points_box_secret_key, secret)
+		if got_player_points == false:
+			got_player_points = true
+			player_points_balance = number
+		else:
+			got_player_points = false
+			$MatchResolution.visible = true
+			resolution_timer = 10
+			if number > player_points_balance:
+				var points = number - player_points_balance
+				if points > 1:
+					$MatchResolution/Result.text = "You won!\n\n+" + String(points) + " points"
+				else:
+					$MatchResolution/Result.text = "You won!\n\n+" + String(points) + " point"
+				player_points_balance = number
+			else:
+				$MatchResolution/Result.text = "You lost..."
 
 
 
 
 
 # Called from Rust
-func set_box_keys(var _public_key, var _secret_key, var _calldata):
-	box_public_key = _public_key
-	box_secret_key = _secret_key
-	box_key_calldata = _calldata
+func box_keys_for_current_score(var _public_key, var _secret_key, var _calldata):
+	score_box_public_key = _public_key
+	score_box_secret_key = _secret_key
+	score_box_key_calldata = _calldata
 	get_current_score()
 
+func box_keys_for_points_balance(var _public_key, var _secret_key, var _calldata):
+	points_box_public_key = _public_key
+	points_box_secret_key = _secret_key
+	points_box_key_calldata = _calldata
+	get_points_balance()
 	
 	
 
