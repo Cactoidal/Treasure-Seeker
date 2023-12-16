@@ -102,7 +102,7 @@ More commonly, transactions get dropped entirely, which can make the game hang u
 
 Regardless, there is now a [public release available for MacOSX and Linux/X11](https://github.com/Cactoidal/Treasure-Seeker/releases/tag/v0.1.1-alpha)!  If you'd like to try it, you should definitely play with a friend, otherwise you will simply sit in the queue.
 
-I've also created a [short demo video](https://www.youtube.com/watch?v=wdNZbRqhCMY) showing the gameplay, and explaining the contract logic.
+I've also created a [short demo video](https://www.youtube.com/watch?v=BNGZzhGJ17s) showing the gameplay, and explaining the contract logic.
 
 And that brings this first experiment with the fhEVM to a close.  As always, thanks for reading.
 
