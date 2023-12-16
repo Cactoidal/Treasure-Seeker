@@ -21,15 +21,14 @@ contract TreasureSeeker is EIP712WithModifier {
     mapping (address => euint8[3]) traps;
     mapping (address => bool) public hasSetTraps;
     mapping (address => bool) public activeMiner;
-    mapping (uint => mapping (address => mapping (uint8 => bool))) minedLocations;
+    mapping (uint => mapping (address => mapping (uint8 => euint8))) minedTiles;
+    mapping (uint => mapping(address => uint8)) minedTileLength;
     mapping (address => bool) public readyToEnd;
     mapping (address => uint) public lastAction;
 
     constructor() EIP712WithModifier("Authorization token", "1") {
 
     }
-
-    
 
 
 
@@ -119,19 +118,15 @@ contract TreasureSeeker is EIP712WithModifier {
         hasSetTraps[msg.sender] = true;
         activeMiner[msg.sender] = true;
         lastAction[msg.sender] = block.number;
+
     }
 
 
-    mapping (uint => mapping (address => mapping (uint8 => euint8))) minedTiles;
-    mapping (uint => mapping(address => uint8)) minedTileLength;
 
-
-    // New tryMine() transaction to correct information leak (currently testing)
-
-    // Choose a spot to mine.  If the mine has a trap, you will lose 33 points.  Otherwise, you gain 1 point.
+    // Choose a spot to mine.  If the mine has a trap, you will lose all points.  Otherwise, you gain 1 point.
     // Must mine within the boundaries of the board (0-24)
     // Can't mine in the same spot twice
-    function tryMine2(bytes calldata tryLocation) public {
+    function tryMine(bytes calldata tryLocation) public {
         address opponent = currentOpponent[msg.sender];
         euint8 resources = currentResources[msg.sender];
 
@@ -184,38 +179,6 @@ contract TreasureSeeker is EIP712WithModifier {
 
         ebool wasTrapped = TFHE.lt(detectTrapped, detectTrappedBase);
         currentResources[msg.sender] = TFHE.cmux(wasTrapped, TFHE.sub(_resources, _resources), TFHE.add(_resources, 1));
-        lastAction[msg.sender] = block.number;
-    }
-
-
-
-    // Choose a spot to mine.  If the mine has a trap, you will lose 33 points.  Otherwise, you gain 1 point.
-    // Must mine within the boundaries of the board (0-24)
-    // Can't mine in the same spot twice
-    function tryMine(uint8 location) public {
-        require (location >= 0 && location < 25);
-        require (minedLocations[gameSession[msg.sender]][msg.sender][location] == false);
-        minedLocations[gameSession[msg.sender]][msg.sender][location] = true;
-
-        address opponent = currentOpponent[msg.sender];
-        euint8 resources = currentResources[msg.sender];
-
-        require(activeMiner[msg.sender] == true);
-        require(hasSetTraps[opponent] == true);
-
-        euint8 detectTrappedBase = TFHE.randEuint8();
-        ebool lowRand = TFHE.lt(detectTrappedBase, 3);
-        detectTrappedBase = TFHE.cmux(lowRand, TFHE.add(detectTrappedBase, 3), detectTrappedBase);
-        euint8 detectTrapped = detectTrappedBase;
-
-        // Check whether the given location matches a trapped tile
-        for (uint i; i < 3; i++) {
-            ebool trapped = TFHE.eq(traps[opponent][i], location);
-            detectTrapped = TFHE.cmux(trapped, TFHE.sub(detectTrapped, 1), detectTrapped);
-        }
-
-        ebool wasTrapped = TFHE.lt(detectTrapped, detectTrappedBase);
-        currentResources[msg.sender] = TFHE.cmux(wasTrapped, TFHE.sub(resources, 33), TFHE.add(resources, 1));
         lastAction[msg.sender] = block.number;
     }
 
