@@ -78,7 +78,7 @@ impl Future for NewFuture {
 name = "Authorization token",
 version = "1",
 chain_id = 8009,
-verifying_contract = "0x90419A5A86fE044B09114aeA0741f6da8f5E52dB"
+verifying_contract = "0x2637B84fBF681Eeb3273F33B1E0Fc9758861bAc5"
 )]
 struct Reencrypt {
     publicKey: [u8; 32]
@@ -346,7 +346,7 @@ async fn set_traps(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: Godo
 
 #[method]
 #[tokio::main]
-async fn try_mine(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: GodotString, rpc: GodotString, _gas_fee: u64, _count: u64, location: u8, ui_node: Ref<Control>) -> NewFuture {
+async fn try_mine(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: GodotString, rpc: GodotString, _gas_fee: u64, _count: u64, key_material: GodotString, _location: u8, ui_node: Ref<Control>) -> NewFuture {
     
     let vec = &key.to_vec();
 
@@ -366,7 +366,23 @@ async fn try_mine(key: PoolArray<u8>, chain_id: u64, fhe_contract_address: Godot
     
     let contract = FHEABI::new(contract_address.clone(), Arc::new(client.clone()));
 
-    let calldata = contract.try_mine(location.into()).calldata().unwrap();
+    let raw_hex: String = key_material.to_string();
+    
+    let decoded: Bytes = ethers::abi::AbiDecode::decode_hex(raw_hex).unwrap();
+
+    let d_vec: Vec<u8> = decoded.iter().map(|x| x.clone()).collect();
+    
+    let d_bytes = &d_vec[..]; 
+
+    let chain_public_key: CompactPublicKey = bincode::deserialize(d_bytes).unwrap();
+
+    let ser_location = bincode::serialize(&_location).unwrap();
+    let location_bytes = &ser_location[..];
+    let fhe_location = CompactFheUint8List::try_encrypt(location_bytes, &chain_public_key).unwrap();
+    let ser_fhe_location = bincode::serialize(&fhe_location).unwrap();
+    let fhe_location_bytes: Bytes = ser_fhe_location.into();
+
+    let calldata = contract.try_mine(fhe_location_bytes).calldata().unwrap();
 
     let tx = Eip1559TransactionRequest::new()
         .from(user_address)
