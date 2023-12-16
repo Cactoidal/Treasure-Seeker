@@ -1,6 +1,11 @@
 [
 	{
 		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"inputs": [],
 		"name": "ECDSAInvalidSignature",
 		"type": "error"
 	},
@@ -47,75 +52,6 @@
 		"inputs": [],
 		"name": "EIP712DomainChanged",
 		"type": "event"
-	},
-	{
-		"inputs": [],
-		"name": "exitQueue",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "forceEndGame",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "joinMatch",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes",
-				"name": "_trap1",
-				"type": "bytes"
-			},
-			{
-				"internalType": "bytes",
-				"name": "_trap2",
-				"type": "bytes"
-			},
-			{
-				"internalType": "bytes",
-				"name": "_trap3",
-				"type": "bytes"
-			}
-		],
-		"name": "setTraps",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "stopMining",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint8",
-				"name": "location",
-				"type": "uint8"
-			}
-		],
-		"name": "tryMine",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"stateMutability": "nonpayable",
-		"type": "constructor"
 	},
 	{
 		"inputs": [
@@ -199,6 +135,20 @@
 		"type": "function"
 	},
 	{
+		"inputs": [],
+		"name": "exitQueue",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "forceEndGame",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [
 			{
 				"internalType": "bytes32",
@@ -258,6 +208,13 @@
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "joinMatch",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -358,6 +315,36 @@
 	{
 		"inputs": [
 			{
+				"internalType": "bytes",
+				"name": "_trap1",
+				"type": "bytes"
+			},
+			{
+				"internalType": "bytes",
+				"name": "_trap2",
+				"type": "bytes"
+			},
+			{
+				"internalType": "bytes",
+				"name": "_trap3",
+				"type": "bytes"
+			}
+		],
+		"name": "setTraps",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "stopMining",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "bytes32",
 				"name": "publicKey",
 				"type": "bytes32"
@@ -377,6 +364,19 @@
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bytes",
+				"name": "tryLocation",
+				"type": "bytes"
+			}
+		],
+		"name": "tryMine",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
