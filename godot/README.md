@@ -127,3 +127,7 @@ Instead of taking a cleartext uint8, tryMine() will now take a homomorphically e
 The player will also autolose if the game detects that the euint8 is greater than 24.
 
 Naturally, looping through many mappings and repeatedly cmuxxing will blow up the cost of a transaction, which is less than ideal.  But it at least corrects the current problem.
+
+In practice, it might be that most players won't end up with many mappings, electing to quit the match well before gas gets too out of hand.
+
+The contract logic has been updated, the demo has been re-released, and the information leak problem has been corrected.  While I would have liked to notice this glaring flaw much earlier, I'm glad I realized it was there.
