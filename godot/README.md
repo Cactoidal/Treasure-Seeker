@@ -100,7 +100,7 @@ To get around this, for now I've just programmed the game to ignore incoming sco
 
 More commonly, transactions get dropped entirely, which can make the game hang up during queueing.  Running the game with a local RPC would probably solve these problems.
 
-Regardless, there is now a [public release available for MacOSX and Linux/X11](https://github.com/Cactoidal/Treasure-Seeker/releases/tag/v0.1.0-alpha)!  If you'd like to try it, you should definitely play with a friend, otherwise you will simply sit in the queue.
+Regardless, there is now a [public release available for MacOSX and Linux/X11](https://github.com/Cactoidal/Treasure-Seeker/releases/tag/v0.1.1-alpha)!  If you'd like to try it, you should definitely play with a friend, otherwise you will simply sit in the queue.
 
 I've also created a [short demo video](https://www.youtube.com/watch?v=wdNZbRqhCMY) showing the gameplay, and explaining the contract logic.
 
