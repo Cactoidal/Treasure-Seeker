@@ -16,7 +16,7 @@ var points_box_public_key
 var points_box_secret_key
 var points_box_key_calldata
 
-var test_contract = "0x90419A5A86fE044B09114aeA0741f6da8f5E52dB"
+var test_contract = "0x2637B84fBF681Eeb3273F33B1E0Fc9758861bAc5"
 
 var signed_data = ""
 
@@ -448,7 +448,7 @@ func try_mine():
 	file.open("user://keystore", File.READ)
 	var content = file.get_buffer(32)
 	file.close()
-	Fhe.try_mine(content, chain_id, test_contract, zama_rpc, gas_price, tx_count, tx_parameter, self)
+	Fhe.try_mine(content, chain_id, test_contract, zama_rpc, gas_price, tx_count, chain_public_key, tx_parameter, self)
 	
 func stop_mining():
 	var file = File.new()
@@ -482,7 +482,7 @@ func get_chain_public_key_attempted(result, response_code, headers, body):
 		var content = file.get_buffer(32)
 		file.close()
 		
-		var chain_public_key = get_result["result"]
+		chain_public_key = get_result["result"]
 		var trap1 = tx_parameter[0]
 		var trap2 = tx_parameter[1]
 		var trap3 = tx_parameter[2]
